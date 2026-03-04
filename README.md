@@ -156,7 +156,7 @@ data: Mise à jour de données
 - **Éditeur** : MagLab Studio — projet communautaire open source
 - **Indépendance** : aucune affiliation politique
 - **RGPD** : hébergement EU, pas de trackers, pas de cookies de suivi
-- **Droit de réponse** : contact@maglab.app
+- **Droit de réponse** : contact@maire.app
 - **Code électoral** : respect du silence électoral, pas de propagande
 
 ---
@@ -170,6 +170,6 @@ Contenu : [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ## Contact
 
-- **Email** : [contact@maglab.app](mailto:contact@maglab.app)
+- **Email** : [contact@maire.app](mailto:contact@maire.app)
 - **GitHub** : [github.com/MagLabAI/maire_app](https://github.com/MagLabAI/maire_app)
 - **Site** : [maire.app](https://maire.app)

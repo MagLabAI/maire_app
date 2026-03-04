@@ -150,7 +150,7 @@
 				<h2>Contact</h2>
 				<p>
 					Pour toute question, suggestion ou signalement (y compris suspicion de diffamation) :
-					<a href="mailto:contact@maglab.app">contact@maglab.app</a>
+					<a href="mailto:contact@maire.app">contact@maire.app</a>
 				</p>
 				<p>
 					Pour signaler une erreur factuelle ou exercer un droit de réponse :

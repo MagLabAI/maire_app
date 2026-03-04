@@ -71,7 +71,7 @@
 		<div class="faq-footer">
 			<p>
 				Vous ne trouvez pas votre réponse ?
-				<a href="mailto:contact@maglab.app">Écrivez-nous</a> ou consultez
+				<a href="mailto:contact@maire.app">Écrivez-nous</a> ou consultez
 				<a href="/a-propos">la page À propos</a>,
 				<a href="/corrections">Transparence IA</a> et
 				<a href="/mentions-legales">Mentions légales</a>.

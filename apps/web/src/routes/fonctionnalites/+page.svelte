@@ -519,7 +519,7 @@
 					L'objectif est de rester accessible, même pour les communes
 					à faible dotation.
 				</p>
-				<a href="mailto:contact@maglab.app?subject=Interet Commune" class="pricing-cta secondary">Manifester son intérêt</a>
+				<a href="mailto:contact@maire.app?subject=Interet Commune" class="pricing-cta secondary">Manifester son intérêt</a>
 			</div>
 
 			<!-- Intercommunalité -->
@@ -562,7 +562,7 @@
 					Paiement à l'usage par tokens IA. Chaque analyse consomme un nombre de tokens
 					proportionnel à sa complexité — vous ne payez que ce que vous utilisez.
 				</p>
-				<a href="mailto:contact@maglab.app?subject=Interet Intercommunalite" class="pricing-cta secondary">Manifester son intérêt</a>
+				<a href="mailto:contact@maire.app?subject=Interet Intercommunalite" class="pricing-cta secondary">Manifester son intérêt</a>
 			</div>
 		</div>
 	</section>

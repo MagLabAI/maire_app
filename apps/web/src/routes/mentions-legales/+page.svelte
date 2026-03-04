@@ -42,7 +42,7 @@
 					<dd>Code source : <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a>. Contenu : <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</dd>
 
 					<dt>Contact</dt>
-					<dd><a href="mailto:contact@maglab.app">contact@maglab.app</a></dd>
+					<dd><a href="mailto:contact@maire.app">contact@maire.app</a></dd>
 				</dl>
 			</div>
 
@@ -138,7 +138,7 @@
 				<p>
 					Conformément au RGPD, vous disposez des droits d'accès, de rectification, d'effacement,
 					de limitation, de portabilité et d'opposition. Pour exercer ces droits :
-					<a href="mailto:contact@maglab.app">contact@maglab.app</a>
+					<a href="mailto:contact@maire.app">contact@maire.app</a>
 				</p>
 			</div>
 
@@ -153,7 +153,7 @@
 				</p>
 				<ul>
 					<li><a href="/corrections">Notre page de signalement</a> — formulaire de contact et processus de correction détaillé</li>
-					<li>Email : <a href="mailto:contact@maglab.app">contact@maglab.app</a> (mention « Droit de réponse »)</li>
+					<li>Email : <a href="mailto:contact@maire.app">contact@maire.app</a> (mention « Droit de réponse »)</li>
 				</ul>
 				<p>
 					Toutes les corrections sont publiques et consultables sur notre <a href="/corrections/stats">tableau de bord</a>.
