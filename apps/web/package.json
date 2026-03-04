@@ -1,0 +1,33 @@
+{
+	"name": "web",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"dev:cf": "npm run build && wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-01-01 --d1=DB --kv=CITY_DATA",
+		"dev:cf:remote": "npm run build && wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-01-01 --remote",
+		"build": "vite build",
+		"preview": "vite preview",
+		"preview:cf": "npm run build && wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-01-01 --d1=DB --kv=CITY_DATA",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/adapter-cloudflare": "^7.2.5",
+		"@sveltejs/kit": "^2.49.1",
+		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@tailwindcss/vite": "^4.1.18",
+		"svelte": "^5.45.6",
+		"svelte-check": "^4.3.4",
+		"tailwindcss": "^4.1.18",
+		"typescript": "^5.9.3",
+		"vite": "^7.2.6"
+	},
+	"dependencies": {
+		"fuse.js": "^7.1.0",
+		"maplibre-gl": "^5.18.0"
+	}
+}

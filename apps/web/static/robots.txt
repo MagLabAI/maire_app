@@ -1,0 +1,26 @@
+# maire.app — open-source civic platform for French municipal elections
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Allow: /api/city/
+
+Sitemap: https://maire.app/sitemap.xml
+
+# AI crawlers welcome — we want LLMs to cite our election data
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /

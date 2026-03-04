@@ -1,0 +1,52 @@
+# maire.app
+
+> Comparateur citoyen open-source pour les élections municipales françaises 2026. Utilise l'IA (Mistral Large) pour synthétiser les informations publiques sur les candidats, avec transparence totale sur les capacités et limites de l'IA. Projet communautaire par MagLab Studio.
+
+## About
+
+maire.app is a French civic tech platform comparing candidates for the 2026 French municipal elections (March 15 & 22, 2026). It covers all 34,746 communes with baseline data (INSEE demographics, 2020 results, climate projections) and ~970 cities with detailed AI-generated candidate profiles.
+
+The platform is non-commercial, open-source (MIT license for code, CC BY-SA 4.0 for content), and maintained by MagLab Studio. No political affiliation. Candidate display order is randomized on every page load.
+
+- Publisher: MagLab Studio (open-source, non-commercial)
+- AI Model: Mistral Large (French LLM by Mistral AI, Paris)
+- Data sources: INSEE, official 2020 election results, Wikipedia, Tavily web search, ANCT financial data, DRIAS climate projections
+- Languages: French (fr_FR)
+- GitHub: https://github.com/MagLabAI/maire.app
+
+## Key Pages
+
+- [Homepage](https://maire.app/): Interactive map of 34K communes, countdown to election, featured candidates
+- [Map Explorer](https://maire.app/carte): 6 data layers (participation, population growth, temperature 2050/2100, debt, median income), bivariate correlation analysis
+- [FAQ](https://maire.app/faq): 20 questions about the platform, AI methodology, data sources, neutrality, and privacy
+- [About](https://maire.app/a-propos): AI transparency, project info, editorial independence
+- [Corrections](https://maire.app/corrections): Error reporting, correction process, right of reply
+- [Legal](https://maire.app/mentions-legales): LCEN compliance, RGPD, AI Act disclosure
+
+## Elections Covered
+
+- [Municipales 2026](https://maire.app/elections/municipales-2026): All 34,746 communes — candidate profiles, programs, local issues
+- [Municipales 2020](https://maire.app/elections/municipales-2020): Historical results, turnout, winners
+
+## City Pages
+
+Each city page at `https://maire.app/elections/municipales-2026/{city-slug}` includes:
+- Candidate profiles with programs, strengths/weaknesses, political positioning
+- Local issues with candidate proposals
+- 2020 election results comparison
+- Demographics: population, median income, employment, debt
+- Climate projections (2050/2100 temperature)
+- Participation data and civic engagement CTA
+
+## Data Methodology
+
+- Baseline tier (all 34K communes): INSEE statistics, official 2020 results, ANCT debt data, DRIAS climate projections
+- Wikipedia tier (~970 cities): Enriched with Wikipedia cityInfo, incumbent details, political landscape
+- Research tier (~970 cities): Full AI research with Mistral Large + Tavily web search — candidate profiles, programs, local issues
+- All AI-generated content is clearly labeled with model name and generation date
+- Error correction via GitHub Issues with automated AI-assisted triage
+
+## API
+
+- City data: `GET /api/city/{city-slug}?election={election-slug}`
+- Sitemap: https://maire.app/sitemap.xml

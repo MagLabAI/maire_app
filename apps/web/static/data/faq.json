@@ -1,0 +1,142 @@
+[
+	{
+		"id": "projet-quoi",
+		"category": "Le projet",
+		"question": "C'est quoi maire.app ?",
+		"answer": "maire.app est un comparateur citoyen pour les élections municipales françaises. On utilise l'IA (Mistral Large) pour synthétiser les informations publiques sur les candidats : programmes, parcours, positionnement. Le tout présenté de manière neutre et accessible, avec des fiches-candidats façon cartes à collectionner.",
+		"keywords": ["maire", "projet", "elections", "municipales", "candidats", "comparateur"]
+	},
+	{
+		"id": "projet-qui",
+		"category": "Le projet",
+		"question": "Qui est derrière maire.app ?",
+		"answer": "C'est un projet communautaire open source initié par MagLab Studio. Aucun parti politique, aucun média, aucune institution ne finance ou n'influence le projet. Le code source est disponible sur GitHub sous licence MIT.",
+		"keywords": ["maglab", "studio", "association", "equipe", "createur", "independant", "open source"]
+	},
+	{
+		"id": "projet-neutralite",
+		"category": "Le projet",
+		"question": "Comment garantissez-vous la neutralité ?",
+		"answer": "Quatre garde-fous : 1) les candidats sont affichés dans un ordre aléatoire à chaque visite, 2) chaque profil utilise le même format et niveau de détail, 3) les couleurs du site (or, marine, crème) sont choisies pour éviter toute association partisane, 4) aucune prédiction de résultat ni recommandation de vote.",
+		"keywords": ["neutralite", "impartialite", "objectif", "politique", "biais", "ordre", "couleurs"]
+	},
+	{
+		"id": "projet-dates",
+		"category": "Le projet",
+		"question": "Quand ont lieu les élections municipales 2026 ?",
+		"answer": "Les élections municipales sont prévues les 15 et 22 mars 2026 (premier et second tour). La date limite de dépôt des candidatures était le 26 février 2026 à 18h.",
+		"keywords": ["date", "election", "2026", "mars", "premier tour", "second tour", "calendrier"]
+	},
+	{
+		"id": "projet-avenir",
+		"category": "Le projet",
+		"question": "Quel est l'avenir de maire.app après les élections ?",
+		"answer": "Honnêtement, on ne sait pas encore ! La suite dépend de vos retours et de la traction du projet. Si ça marche, on envisage d'accompagner les maires dans leur mandat : veille réglementaire, écoute citoyenne, collaboration entre élus. Mais rien n'est décidé — on avance pas à pas.",
+		"keywords": ["avenir", "futur", "apres", "mandat", "suite", "plan", "roadmap"]
+	},
+	{
+		"id": "ia-comment",
+		"category": "L'IA",
+		"question": "Comment l'IA génère-t-elle les fiches candidats ?",
+		"answer": "On utilise Mistral Large avec l'API de recherche Tavily. L'agent recherche d'abord les programmes officiels des candidats, puis complète avec des articles de presse et sources institutionnelles. Les résultats sont structurés selon un schéma JSON précis (positionnement, parcours, propositions clés). Chaque fiche affiche la date de génération et le modèle utilisé.",
+		"keywords": ["ia", "intelligence artificielle", "mistral", "tavily", "generation", "modele", "fonctionnement"]
+	},
+	{
+		"id": "ia-erreurs",
+		"category": "L'IA",
+		"question": "L'IA peut-elle se tromper ?",
+		"answer": "Oui, absolument. L'IA peut halluciner des informations, confondre des homonymes, ou manquer des données récentes. C'est pourquoi chaque page affiche un bandeau de transparence avec le modèle et la date, et qu'on a mis en place un système de signalement d'erreurs. Toute erreur signalée est revue sous 48h.",
+		"keywords": ["erreur", "tromper", "hallucination", "fiabilite", "precision", "faux", "inexact"]
+	},
+	{
+		"id": "ia-journalistes",
+		"category": "L'IA",
+		"question": "Pourquoi utiliser l'IA plutôt que des journalistes ?",
+		"answer": "On ne remplace pas le journalisme ! Les journalistes font un travail d'investigation et de terrain irremplaçable. maire.app est un outil de synthèse complémentaire : on agrège les informations publiques déjà existantes pour les rendre plus accessibles. Pour 34 000 communes, c'est la seule approche viable à notre échelle.",
+		"keywords": ["journaliste", "presse", "media", "investigation", "pourquoi", "difference"]
+	},
+	{
+		"id": "ia-modele",
+		"category": "L'IA",
+		"question": "Quel modèle d'IA utilisez-vous exactement ?",
+		"answer": "Mistral Large, un modèle français développé par Mistral AI (Paris). Pour la recherche web, on utilise Tavily. Pour l'enrichissement des données ville, on passe aussi par les articles Wikipedia. Tout le pipeline est documenté dans notre dépôt GitHub.",
+		"keywords": ["modele", "mistral", "large", "gpt", "chatgpt", "llm", "tavily", "technique"]
+	},
+	{
+		"id": "donnees-sources",
+		"category": "Les données",
+		"question": "D'où viennent vos données ?",
+		"answer": "Cinq sources principales : 1) INSEE pour les statistiques locales (population, revenus, emploi), 2) les résultats officiels des municipales 2020, 3) les articles Wikipedia sur les villes, 4) la recherche web Tavily pour les candidats et programmes 2026, 5) les données financières ANCT pour la dette des communes.",
+		"keywords": ["source", "donnees", "insee", "wikipedia", "origine", "provenance", "data"]
+	},
+	{
+		"id": "donnees-ville-manquante",
+		"category": "Les données",
+		"question": "Ma ville n'a pas de fiche candidat, comment faire ?",
+		"answer": "Les 34 746 communes de France ont une fiche de base (stats, résultats 2020, climat). Pour les candidats 2026, on a recherché environ 970 villes. Si votre ville manque, vous pouvez ouvrir une demande sur GitHub — un pipeline automatique génère la fiche en quelques minutes.",
+		"keywords": ["ville", "manquante", "absente", "ajouter", "demande", "commune", "recherche"]
+	},
+	{
+		"id": "donnees-2020",
+		"category": "Les données",
+		"question": "Pourquoi afficher les résultats de 2020 ?",
+		"answer": "Le contexte historique aide à comprendre le paysage politique local. On affiche la participation (souvent très basse en 2020 à cause du Covid), les listes présentes, et le maire sortant. Ça permet de situer les candidats 2026 par rapport au scrutin précédent.",
+		"keywords": ["2020", "resultats", "historique", "ancien", "precedent", "participation", "covid"]
+	},
+	{
+		"id": "donnees-classement",
+		"category": "Les données",
+		"question": "Les candidats sont-ils classés par chances de victoire ?",
+		"answer": "Non, jamais. L'ordre d'affichage est aléatoire et change à chaque visite. On ne fait aucune prédiction de résultat, aucun sondage, aucune recommandation. Les badges (Sortant, Expérimenté, Renouveau) décrivent le parcours, pas les chances.",
+		"keywords": ["classement", "ordre", "victoire", "chances", "prediction", "sondage", "favori"]
+	},
+	{
+		"id": "donnees-comparer",
+		"category": "Les données",
+		"question": "Comment fonctionne l'outil de comparaison ?",
+		"answer": "Cliquez sur 'Comparer' sur les fiches candidats (jusqu'à 4). Une barre dorée apparaît en haut de page avec vos sélections. Cliquez 'Comparer' pour voir les profils côte à côte : positionnement, programme, parcours, forces et faiblesses. Pratique pour y voir plus clair avant le vote !",
+		"keywords": ["comparer", "comparaison", "versus", "cote a cote", "outil", "fonctionnement"]
+	},
+	{
+		"id": "contribuer-erreur",
+		"category": "Contribuer",
+		"question": "Comment signaler une erreur ?",
+		"answer": "Deux options : 1) via GitHub Issues avec notre formulaire structuré (le plus rapide, traitement automatique), 2) via le formulaire de contact sur la page /corrections (traitement manuel sous 48h). Dans les deux cas, indiquez la ville, le champ concerné, et si possible une source officielle.",
+		"keywords": ["erreur", "signaler", "correction", "bug", "faux", "inexact", "contact"]
+	},
+	{
+		"id": "contribuer-reponse",
+		"category": "Contribuer",
+		"question": "Je suis candidat, puis-je exercer un droit de réponse ?",
+		"answer": "Absolument. Conformément à la loi française (article 13 LCEN), tout candidat ou personne citée dispose d'un droit de réponse. Écrivez à contact@maglab.app ou utilisez le formulaire /corrections. Votre réponse sera publiée dans les mêmes conditions que le contenu initial, sous 3 jours.",
+		"keywords": ["candidat", "droit de reponse", "reponse", "lcen", "rectification", "contester"]
+	},
+	{
+		"id": "contribuer-code",
+		"category": "Contribuer",
+		"question": "Le projet est-il open source ? Comment contribuer ?",
+		"answer": "Oui ! Code sous licence MIT, contenu sous CC BY-SA 4.0. Le dépôt est sur github.com/MagLabAI/maire.app. Vous pouvez contribuer au code, signaler des bugs, proposer des améliorations, ou enrichir les données. Les pull requests sont les bienvenues.",
+		"keywords": ["open source", "github", "contribuer", "code", "licence", "mit", "pull request"]
+	},
+	{
+		"id": "technique-donnees-perso",
+		"category": "Technique & vie privée",
+		"question": "Collectez-vous des données personnelles ?",
+		"answer": "Non. Aucun compte nécessaire, aucun cookie de suivi, aucun tracker publicitaire. On utilise uniquement des cookies techniques pour le formulaire de contact (protection anti-spam). L'hébergement est en Union Européenne via Cloudflare Pages. Aucune donnée n'est revendue.",
+		"keywords": ["donnees personnelles", "rgpd", "cookie", "tracker", "vie privee", "privacy", "gdpr"]
+	},
+	{
+		"id": "technique-hebergement",
+		"category": "Technique & vie privée",
+		"question": "Où sont hébergées les données ?",
+		"answer": "En Union Européenne, sur Cloudflare Pages. Le site est principalement statique (pages pré-générées), ce qui signifie pas de serveur à pirater et des performances optimales. Les quelques données dynamiques (file d'attente de recherche, formulaire de contact) sont stockées sur Cloudflare D1, également en UE.",
+		"keywords": ["hebergement", "serveur", "cloudflare", "europe", "ue", "securite", "infrastructure"]
+	},
+	{
+		"id": "technique-cout",
+		"category": "Technique & vie privée",
+		"question": "Combien coûte la recherche IA par ville ?",
+		"answer": "Entre 0,10 € et 0,17 € par ville selon la taille (nombre de candidats, profondeur de recherche). Pour les 950 villes principales, le budget total est d'environ 104 €. L'enrichissement Wikipedia par lot coûte environ 4 € pour 986 villes. Le site lui-même est hébergé gratuitement grâce au plan gratuit Cloudflare.",
+		"keywords": ["cout", "prix", "budget", "argent", "financement", "gratuit", "recherche"]
+	}
+]

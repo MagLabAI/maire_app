@@ -1,0 +1,51 @@
+{
+	"elections": [
+		{
+			"id": "municipales-2026",
+			"slug": "municipales-2026",
+			"name": "Élections Municipales 2026",
+			"nameShort": "Municipales 2026",
+			"type": "municipal",
+			"country": "FR",
+			"dates": {
+				"round1": "2026-03-15",
+				"round2": "2026-03-22",
+				"candidateDeadline": "2026-02-26T18:00:00+01:00"
+			},
+			"status": "upcoming",
+			"citiesCount": 34746,
+			"candidatesCount": null,
+			"dataPath": "/data/municipales-2026"
+		},
+		{
+			"id": "municipales-2020",
+			"slug": "municipales-2020",
+			"name": "Élections Municipales 2020",
+			"nameShort": "Municipales 2020",
+			"type": "municipal",
+			"country": "FR",
+			"dates": {
+				"round1": "2020-03-15",
+				"round2": "2020-06-28"
+			},
+			"status": "past",
+			"citiesCount": 34746,
+			"dataPath": "/data/municipales-2020"
+		},
+		{
+			"id": "europeennes-2029",
+			"slug": "europeennes-2029",
+			"name": "Élections Européennes 2029",
+			"nameShort": "Européennes 2029",
+			"type": "european",
+			"country": "EU",
+			"dates": {
+				"round1": "2029-06-08"
+			},
+			"status": "future",
+			"citiesCount": null,
+			"dataPath": null
+		}
+	],
+	"featured": "municipales-2026"
+}

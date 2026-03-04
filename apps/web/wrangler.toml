@@ -1,0 +1,42 @@
+name = "maire-app"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# ============================================
+# D1 Database: Research queue and city metadata
+# ============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "maire-research-queue"
+database_id = "c4e2b439-baba-495e-8d05-10276c6ca56e"
+
+# ============================================
+# KV Namespace: City research data storage
+# ============================================
+[[kv_namespaces]]
+binding = "CITY_DATA"
+id = "b74697887a2e416db6d1ab0246ff5b7c"
+
+# ============================================
+# Production Environment
+# ============================================
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "maire-research-queue"
+database_id = "c4e2b439-baba-495e-8d05-10276c6ca56e"
+
+[[env.production.kv_namespaces]]
+binding = "CITY_DATA"
+id = "b74697887a2e416db6d1ab0246ff5b7c"
+
+# ============================================
+# Scheduled Workers: Nightly research processing
+# ============================================
+# Cron triggers are handled by a separate Worker: workers/scheduler/
+# Deploy: cd workers/scheduler && npm run deploy
+# Schedule: 0 2-6 * * * (every hour 2-6am UTC)
+# Manual trigger: GET /api/_scheduled/process-queue
