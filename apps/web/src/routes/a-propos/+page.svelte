@@ -28,7 +28,7 @@
 				<h2>Notre mission</h2>
 				<p>
 					maire.app est un projet communautaire open source initié par
-					<a href="https://maglab.app" target="_blank" rel="noopener">MagLab Studio</a>.
+					<a href="https://github.com/MagLabAI" target="_blank" rel="noopener">MagLab Studio</a>.
 					Les données et textes analysés proviennent exclusivement de programmes publics
 					et de sources officielles (sites mairie, plateformes électorales, communiqués des listes).
 				</p>

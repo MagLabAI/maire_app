@@ -446,7 +446,7 @@
 				"headline": `Candidats municipales 2026 à ${data.cityData.city.name}`,
 				"datePublished": data.cityData._metadata.generatedAt.split('T')[0],
 				"dateModified": data.cityData._metadata.generatedAt.split('T')[0],
-				"author": { "@type": "Organization", "name": "MagLab Studio", "url": "https://maglab.app" },
+				"author": { "@type": "Organization", "name": "MagLab Studio", "url": "https://github.com/MagLabAI" },
 				"publisher": { "@type": "Organization", "name": "maire.app", "url": "https://maire.app" },
 				"inLanguage": "fr",
 				"about": { "@type": "City", "name": data.cityData.city.name }

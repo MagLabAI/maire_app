@@ -15,7 +15,7 @@
 					</span>
 				</a>
 				<p class="text-[var(--color-text-light)] max-w-md leading-relaxed">
-					Projet communautaire non commercial par <a href="https://maglab.app" target="_blank" rel="noopener" class="text-[var(--color-gold)] underline decoration-[var(--color-gold)]/40 hover:decoration-[var(--color-gold)]">MagLab Studio</a>.
+					Projet communautaire non commercial par <a href="https://github.com/MagLabAI" target="_blank" rel="noopener" class="text-[var(--color-gold)] underline decoration-[var(--color-gold)]/40 hover:decoration-[var(--color-gold)]">MagLab Studio</a>.
 					L'IA au service de la transparence démocratique.
 				</p>
 				<p class="text-xs text-[var(--color-text-light)] mt-3 max-w-md leading-relaxed">
@@ -108,7 +108,7 @@
 		<!-- Bottom Bar -->
 		<div class="mt-12 pt-8 border-t border-[var(--color-navy-light)] flex flex-col sm:flex-row justify-between items-center gap-4">
 			<p class="text-sm text-[var(--color-text-light)]">
-				© {currentYear} <a href="https://maglab.app" target="_blank" rel="noopener" class="text-[var(--color-gold)] underline decoration-[var(--color-gold)]/40 hover:decoration-[var(--color-gold)]">MagLab Studio</a> — Projet communautaire open source
+				© {currentYear} <a href="https://github.com/MagLabAI" target="_blank" rel="noopener" class="text-[var(--color-gold)] underline decoration-[var(--color-gold)]/40 hover:decoration-[var(--color-gold)]">MagLab Studio</a> — Projet communautaire open source
 			</p>
 			<div class="flex items-center gap-4 text-xs text-[var(--color-text-light)]">
 				<span>Hébergé en UE</span>

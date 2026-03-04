@@ -8,7 +8,7 @@
 
 ## Le projet
 
-**maire.app** est un projet communautaire non commercial par [MagLab Studio](https://maglab.app). Il utilise l'intelligence artificielle pour synthétiser les informations publiques sur les candidats aux élections municipales et les rendre accessibles à tous les électeurs.
+**maire.app** est un projet communautaire non commercial par [MagLab Studio](https://github.com/MagLabAI). Il utilise l'intelligence artificielle pour synthétiser les informations publiques sur les candidats aux élections municipales et les rendre accessibles à tous les électeurs.
 
 Les données et textes analysés proviennent exclusivement de programmes publics et de sources officielles (sites mairie, plateformes électorales, communiqués des listes). Ce comparateur est fourni « tel quel » à titre informatif ; il n'engage ni partis, ni campagnes, ni prestataires.
 

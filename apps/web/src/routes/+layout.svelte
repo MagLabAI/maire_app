@@ -19,7 +19,7 @@
 		"@context": "https://schema.org",
 		"@type": "Organization",
 		"name": "MagLab Studio",
-		"url": "https://maglab.app",
+		"url": "https://github.com/MagLabAI",
 		"logo": "https://maire.app/favicon.svg",
 		"description": "Projet communautaire open source utilisant l'IA pour la transparence des élections municipales françaises.",
 		"sameAs": ["https://github.com/MagLabAI/maire.app"]
