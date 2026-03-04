@@ -53,6 +53,9 @@ const config = {
 				'/devenir-maire',
 				'/couverture',
 				'/sitemap.xml',
+			'/sitemap-pages.xml',
+			'/sitemap-2026.xml',
+			'/sitemap-2020.xml',
 				'/carte',
 				'/faq'
 			],

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import type { City } from '$lib/types/elections';
 	import type Fuse from 'fuse.js';
 
@@ -18,17 +17,14 @@
 	let selectedIndex = $state(-1);
 	let results = $state<City[]>([]);
 	let fuseInstance: Fuse<City> | null = null;
+	let fuseCitiesLen = 0;
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
-	// Build Fuse index once when cities change
-	let lastCitiesRef: City[] | null = null;
-
 	async function ensureFuse() {
-		if (fuseInstance && lastCitiesRef === cities) return;
-		lastCitiesRef = cities;
+		if (fuseInstance && fuseCitiesLen === cities.length) return;
+		fuseCitiesLen = cities.length;
 		const FuseModule = await import('fuse.js');
-		const FuseClass = FuseModule.default;
-		fuseInstance = new FuseClass(cities, {
+		fuseInstance = new FuseModule.default(cities, {
 			keys: [
 				{ name: 'name', weight: 0.7 },
 				{ name: 'department', weight: 0.2 },
@@ -42,7 +38,8 @@
 		});
 	}
 
-	onMount(() => {
+	// Rebuild Fuse when cities prop populates (e.g. after lazy load)
+	$effect(() => {
 		if (cities.length > 0) ensureFuse();
 	});
 

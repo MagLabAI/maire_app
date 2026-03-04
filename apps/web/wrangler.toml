@@ -9,29 +9,14 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 [[d1_databases]]
 binding = "DB"
 database_name = "maire-research-queue"
-database_id = "c4e2b439-baba-495e-8d05-10276c6ca56e"
+database_id = "28d1d627-c234-4e1f-87e6-6e8a118def75"
 
 # ============================================
 # KV Namespace: City research data storage
 # ============================================
 [[kv_namespaces]]
 binding = "CITY_DATA"
-id = "b74697887a2e416db6d1ab0246ff5b7c"
-
-# ============================================
-# Production Environment
-# ============================================
-[env.production]
-vars = { ENVIRONMENT = "production" }
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "maire-research-queue"
-database_id = "c4e2b439-baba-495e-8d05-10276c6ca56e"
-
-[[env.production.kv_namespaces]]
-binding = "CITY_DATA"
-id = "b74697887a2e416db6d1ab0246ff5b7c"
+id = "4c475af63f75458f8309fc35d55259ad"
 
 # ============================================
 # Scheduled Workers: Nightly research processing

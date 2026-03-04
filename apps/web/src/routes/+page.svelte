@@ -14,7 +14,20 @@
 
 	let featuredElection = $derived(data.elections.find((e) => e.id === data.featuredElection));
 	let electionDate = $derived(featuredElection?.dates.round1 || '2026-03-15');
-	let popularCities = $derived(data.cities.slice(0, 8));
+
+	const popularCities = [
+		{ name: 'Paris', slug: 'paris' },
+		{ name: 'Marseille', slug: 'marseille' },
+		{ name: 'Lyon', slug: 'lyon' },
+		{ name: 'Toulouse', slug: 'toulouse' },
+		{ name: 'Nice', slug: 'nice' },
+		{ name: 'Nantes', slug: 'nantes' },
+		{ name: 'Montpellier', slug: 'montpellier' },
+		{ name: 'Strasbourg', slug: 'strasbourg' }
+	];
+
+	// Cities loaded lazily on client — used for search, featured, geo suggestion
+	let cities = $state<City[]>([]);
 
 	// --- Lazy-load map ---
 	let mapVisible = $state(false);
@@ -44,7 +57,9 @@
 	}
 
 	onMount(async () => {
-		headerSearch.cities = data.cities;
+		// Single fetch via headerSearch store (deduplicates across header + hero)
+		await headerSearch.ensureCities();
+		cities = headerSearch.cities;
 
 		const mapObserver = new IntersectionObserver(
 			([entry]) => {
@@ -78,8 +93,7 @@
 	});
 
 	async function loadFeaturedCandidates() {
-		// Only pick cities with candidates (have individual JSON files)
-		const withCandidates = data.cities.filter((c: City) => c.candidatesCount > 0);
+		const withCandidates = cities.filter((c: City) => c.candidatesCount > 0);
 		const big = withCandidates.filter((c: City) => c.population >= 200000);
 		const medium = withCandidates.filter((c: City) => c.population >= 30000 && c.population < 200000);
 		const small = withCandidates.filter((c: City) => c.population >= 5000 && c.population < 30000);
@@ -120,8 +134,8 @@
 				s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 			const target = normalize(cfCity);
 			suggestedCity =
-				data.cities.find((c: City) => normalize(c.name) === target) ||
-				data.cities.find((c: City) => normalize(c.name).startsWith(target) && c.population > 5000) ||
+				cities.find((c: City) => normalize(c.name) === target) ||
+				cities.find((c: City) => normalize(c.name).startsWith(target) && c.population > 5000) ||
 				null;
 		} catch {
 			// Expected on localhost
@@ -186,7 +200,7 @@
 
 			<!-- Search -->
 			<div class="hero-search" bind:this={heroSearchEl}>
-				<CitySearch cities={data.cities} />
+				<CitySearch cities={headerSearch.cities} />
 			</div>
 
 			<div class="hero-popular">

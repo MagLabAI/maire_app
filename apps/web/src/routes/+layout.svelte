@@ -12,7 +12,6 @@
 
 <svelte:head>
 	<title>maire.app — Découvrez vos candidats aux élections municipales</title>
-	<meta name="description" content="Comparez les candidats aux élections municipales françaises 2026. Programmes, profils, cartes interactives et comparaison des listes. Plateforme citoyenne indépendante avec données ouvertes." />
 	<link rel="alternate" hreflang="fr-FR" href={currentUrl} />
 	<link rel="alternate" hreflang="x-default" href={currentUrl} />
 	{@html `<script type="application/ld+json">${JSON.stringify({
@@ -22,7 +21,7 @@
 		"url": "https://github.com/MagLabAI",
 		"logo": "https://maire.app/favicon.svg",
 		"description": "Projet communautaire open source utilisant l'IA pour la transparence des élections municipales françaises.",
-		"sameAs": ["https://github.com/MagLabAI/maire.app"]
+		"sameAs": ["https://github.com/MagLabAI/maire_app"]
 	})}</script>`}
 	{@html `<script type="application/ld+json">${JSON.stringify({
 		"@context": "https://schema.org",

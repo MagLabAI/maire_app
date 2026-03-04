@@ -8,11 +8,9 @@ const pagesDevBlock: Handle = async ({ event, resolve }) => {
 	const url = new URL(event.request.url);
 
 	// Block main production pages.dev URL
-	// Production: maire-4b6.pages.dev (no commit hash prefix)
-	// Preview: 27d207aa.maire-4b6.pages.dev (has commit hash prefix)
-	// Allow /api/auth/* for OAuth callbacks
-	const isProductionPagesDev =
-		url.hostname === 'maire-4b6.pages.dev' || url.hostname === 'maire.pages.dev';
+	// Production: maire-app.pages.dev (no commit hash prefix)
+	// Preview: abc123.maire-app.pages.dev (has commit hash prefix) — allowed
+	const isProductionPagesDev = url.hostname === 'maire-app.pages.dev';
 
 	// Allow all API routes through (for testing and scheduled workers)
 	if (isProductionPagesDev && !url.pathname.startsWith('/api')) {

@@ -10,20 +10,23 @@ import type { City } from '$lib/types/elections';
 let visible = $state(false);
 let cities = $state<City[]>([]);
 let onSelect = $state<((city: City) => void) | null>(null);
-let loading = false;
+let pending: Promise<void> | null = null;
 
 async function ensureCities() {
-	if (cities.length > 0 || loading) return;
-	loading = true;
-	try {
-		const res = await fetch('/data/municipales-2026/cities.json');
-		const data: { cities: City[] } = await res.json();
-		cities = data.cities;
-	} catch {
-		// Silently fail — search just won't be available
-	} finally {
-		loading = false;
-	}
+	if (cities.length > 0) return;
+	if (pending) return pending;
+	pending = (async () => {
+		try {
+			const res = await fetch('/data/municipales-2026/cities.json');
+			const data: { cities: City[] } = await res.json();
+			cities = data.cities;
+		} catch {
+			// Silently fail — search just won't be available
+		} finally {
+			pending = null;
+		}
+	})();
+	return pending;
 }
 
 export const headerSearch = {
