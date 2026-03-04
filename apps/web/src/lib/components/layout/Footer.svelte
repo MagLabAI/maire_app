@@ -1,7 +1,7 @@
 <script lang="ts">
 	const currentYear = new Date().getFullYear();
 	const emailUser = 'contact';
-	const emailDomain = 'maglab.app';
+	const emailDomain = 'maire.app';
 </script>
 
 <footer class="bg-[var(--color-navy)] text-[#faf8f5] mt-auto">
