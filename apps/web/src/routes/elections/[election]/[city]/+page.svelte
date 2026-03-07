@@ -1373,8 +1373,11 @@
 					<!-- INSEE Demographics (from research citySituation or baseline stats) -->
 					{#if (data.cityData as any).citySituation?.demographics || (data.cityData as any).citySituation?.economic || data.cityData.baselineStats}
 					{@const bs = data.cityData.baselineStats}
-					{@const debt = data.cityData.debtData?.evolution2019_2024}
-					{@const debtSev = debt == null ? 'neutral' : debt <= -5 ? 'low' : debt <= 10 ? 'moderate' : 'critical'}
+					{@const debtPerHabDelta = data.cityData.debtData?.perHabDelta}
+					{@const debtPerHab2024 = data.cityData.debtData?.perHab2024}
+					{@const debt2024 = data.cityData.debtData?.debt2024}
+					{@const debtMedian = data.cityData.debtData?.nationalMedianDelta ?? -73}
+					{@const debtSev = debtPerHabDelta == null ? 'low' : debtPerHabDelta <= debtMedian ? 'low' : debtPerHabDelta <= 0 ? 'moderate' : 'critical'}
 						<section id="demographics-section" class="sidebar-card">
 							<button class="sidebar-header" onclick={() => toggleSection('demographics')}>
 								<h3 class="sidebar-title">
@@ -1407,35 +1410,29 @@
 												</div>
 											{/if}
 										</div>
-									{:else if bs}
-										<!-- Debt severity card -->
-										{#if debt != null}
+										{#if debtPerHabDelta != null}
 											<div class="demo-card debt-card severity-{debtSev}">
 												<div class="demo-card-top">
-													<span class="demo-card-icon">
-														<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-															<path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-														</svg>
-													</span>
-													<span class="demo-card-title">Dette communale</span>
+													<span class="demo-card-icon">💰</span>
+													<span class="demo-card-title">Dette par habitant · évolution 2019-2024</span>
 												</div>
 												<div class="demo-card-value">
-													<span class="demo-big-number">{debt > 0 ? '+' : ''}{debt.toFixed(1)}%</span>
+													<span class="demo-big-number">{debtPerHabDelta > 0 ? '+' : ''}{Math.round(debtPerHabDelta)}</span>
+													<span class="demo-value-unit">€/hab</span>
 												</div>
 												<div class="demo-severity-bar">
 													<div class="demo-severity-track">
-														<div class="demo-severity-fill" style="width: {Math.min(Math.abs(debt) / 30 * 100, 100)}%"></div>
+														<div class="demo-severity-fill" style="width: {Math.min(Math.abs(debtPerHabDelta) / 500 * 100, 100)}%"></div>
 													</div>
-													<span class="demo-severity-label">
-														{#if debt <= -5}En baisse{:else if debt <= 10}Stable{:else}En hausse{/if}
-													</span>
+													<span class="demo-severity-label">{#if debtSev === 'low'}En baisse{:else if debtSev === 'moderate'}Stable{:else}En hausse{/if}</span>
 												</div>
 												<p class="demo-card-desc">
-													{#if debt > 15}Forte hausse de l'endettement sur le mandat 2019-2024{:else if debt > 0}Hausse modérée de la dette sur le mandat 2019-2024{:else if debt > -5}Dette quasi stable sur le mandat 2019-2024{:else}Désendettement sur le mandat 2019-2024{/if}
+													{#if debtPerHab2024 != null}{Math.round(debtPerHab2024).toLocaleString('fr-FR')} €/hab en 2024{/if}{#if debt2024 != null} · {(debt2024 / 1_000_000 >= 1) ? (debt2024 / 1_000_000).toFixed(1) + ' M€' : Math.round(debt2024).toLocaleString('fr-FR') + ' €'} total{/if}
+													<span class="demo-card-muted"> · médiane {Math.round(debtMedian)} €/hab</span>
 												</p>
 											</div>
 										{/if}
-
+									{:else if bs}
 										<!-- Key indicators grid -->
 										<div class="demo-cards-grid">
 											{#if bs.medianIncome}
@@ -1496,6 +1493,28 @@
 												</div>
 											{/if}
 										</div>
+										{#if debtPerHabDelta != null}
+											<div class="demo-card debt-card severity-{debtSev}">
+												<div class="demo-card-top">
+													<span class="demo-card-icon">💰</span>
+													<span class="demo-card-title">Dette par habitant · évolution 2019-2024</span>
+												</div>
+												<div class="demo-card-value">
+													<span class="demo-big-number">{debtPerHabDelta > 0 ? '+' : ''}{Math.round(debtPerHabDelta)}</span>
+													<span class="demo-value-unit">€/hab</span>
+												</div>
+												<div class="demo-severity-bar">
+													<div class="demo-severity-track">
+														<div class="demo-severity-fill" style="width: {Math.min(Math.abs(debtPerHabDelta) / 500 * 100, 100)}%"></div>
+													</div>
+													<span class="demo-severity-label">{#if debtSev === 'low'}En baisse{:else if debtSev === 'moderate'}Stable{:else}En hausse{/if}</span>
+												</div>
+												<p class="demo-card-desc">
+													{#if debtPerHab2024 != null}{Math.round(debtPerHab2024).toLocaleString('fr-FR')} €/hab en 2024{/if}{#if debt2024 != null} · {(debt2024 / 1_000_000 >= 1) ? (debt2024 / 1_000_000).toFixed(1) + ' M€' : Math.round(debt2024).toLocaleString('fr-FR') + ' €'} total{/if}
+													<span class="demo-card-muted"> · médiane {Math.round(debtMedian)} €/hab</span>
+												</p>
+											</div>
+										{/if}
 
 										<!-- Secondary stats (folded) -->
 										{#if bs.bac5Rate || bs.doctors || bs.nurses || bs.mainResidenceRate}
@@ -1549,7 +1568,7 @@
 											{/if}
 										{/if}
 									{/if}
-									<p class="stat-source">Source : INSEE, ANCT (dette) — statistiques-locales.insee.fr</p>
+									<p class="stat-source">Source : INSEE, OFGL/DGFiP (dette) — statistiques-locales.insee.fr, data.ofgl.fr</p>
 								</div>
 							{/if}
 						</section>
@@ -4385,7 +4404,7 @@
 	}
 
 	.debt-card {
-		margin-bottom: 10px;
+		margin-top: 8px;
 	}
 	.debt-card.severity-low {
 		border-left: 3px solid var(--color-success);
@@ -4395,47 +4414,6 @@
 	}
 	.debt-card.severity-critical {
 		border-left: 3px solid var(--color-coral);
-	}
-	.debt-card.severity-neutral {
-		border-left: 3px solid var(--color-text-light);
-	}
-
-	.demo-card-top {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-	}
-	.demo-card-icon {
-		color: var(--color-gold);
-		display: flex;
-		align-items: center;
-	}
-	.demo-card-title {
-		font-size: 0.7rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.03em;
-		color: var(--color-text-light);
-	}
-
-	.demo-card-value {
-		display: flex;
-		align-items: baseline;
-		gap: 4px;
-	}
-	.demo-big-number {
-		font-family: var(--font-display);
-		font-size: 1.5rem;
-		font-weight: 700;
-		line-height: 1;
-		color: var(--color-foreground);
-	}
-	.severity-low .demo-big-number { color: var(--color-success); }
-	.severity-moderate .demo-big-number { color: color-mix(in srgb, var(--color-gold) 80%, #000); }
-	.severity-critical .demo-big-number { color: var(--color-coral); }
-	.demo-value-unit {
-		font-size: 0.7rem;
-		color: var(--color-text-light);
 	}
 
 	.demo-severity-bar {
@@ -4469,6 +4447,50 @@
 	.severity-low .demo-severity-label { color: var(--color-success); }
 	.severity-moderate .demo-severity-label { color: color-mix(in srgb, var(--color-gold) 80%, #000); }
 	.severity-critical .demo-severity-label { color: var(--color-coral); }
+
+	.severity-low .demo-big-number { color: var(--color-success); }
+	.severity-moderate .demo-big-number { color: color-mix(in srgb, var(--color-gold) 80%, #000); }
+	.severity-critical .demo-big-number { color: var(--color-coral); }
+
+	.demo-card-muted {
+		opacity: 0.65;
+		font-size: 0.85em;
+	}
+
+	.demo-card-top {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.demo-card-icon {
+		color: var(--color-gold);
+		display: flex;
+		align-items: center;
+	}
+	.demo-card-title {
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--color-text-light);
+	}
+
+	.demo-card-value {
+		display: flex;
+		align-items: baseline;
+		gap: 4px;
+	}
+	.demo-big-number {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--color-foreground);
+	}
+	.demo-value-unit {
+		font-size: 0.7rem;
+		color: var(--color-text-light);
+	}
 
 	.demo-card-desc {
 		font-size: 0.65rem;

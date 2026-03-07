@@ -6,7 +6,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 /data/*
-  Cache-Control: public, max-age=3600, s-maxage=86400
+  Cache-Control: public, max-age=60, s-maxage=300
 
 /favicon.ico
   Cache-Control: public, max-age=604800

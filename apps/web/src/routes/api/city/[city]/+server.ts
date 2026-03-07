@@ -63,6 +63,8 @@ async function getQueuePosition(db: D1Database, citySlug: string): Promise<numbe
 	return result ? result.position + 1 : null;
 }
 
+const CACHE_HEADERS = { 'Cache-Control': 'public, max-age=60, s-maxage=300' };
+
 export const GET: RequestHandler = async ({ params, platform, fetch, request, url }) => {
 	const citySlug = slugify(decodeURIComponent(params.city));
 	const election = url.searchParams.get('election') || 'municipales-2026';
@@ -80,7 +82,7 @@ export const GET: RequestHandler = async ({ params, platform, fetch, request, ur
 		const cityRes = await fetch(`/data/cities/${citySlug}.json`);
 		if (cityRes.ok) {
 			const data = await cityRes.json();
-			return json({ status: 'ready', source: 'static', data });
+			return json({ status: 'ready', source: 'static', data }, { headers: CACHE_HEADERS });
 		}
 	} catch {
 		// No individual file, try department bundle
@@ -96,7 +98,7 @@ export const GET: RequestHandler = async ({ params, platform, fetch, request, ur
 				if (deptRes.ok) {
 					const deptData: Record<string, unknown> = await deptRes.json();
 					if (deptData[citySlug]) {
-						return json({ status: 'ready', source: 'static', data: deptData[citySlug] });
+						return json({ status: 'ready', source: 'static', data: deptData[citySlug] }, { headers: CACHE_HEADERS });
 					}
 				}
 			}
@@ -110,7 +112,7 @@ export const GET: RequestHandler = async ({ params, platform, fetch, request, ur
 		const legacyRes = await fetch(`/data/${election}/cities/${citySlug}.json`);
 		if (legacyRes.ok) {
 			const data = await legacyRes.json();
-			return json({ status: 'ready', source: 'static', data });
+			return json({ status: 'ready', source: 'static', data }, { headers: CACHE_HEADERS });
 		}
 	} catch {
 		// Fall through
@@ -125,7 +127,7 @@ export const GET: RequestHandler = async ({ params, platform, fetch, request, ur
 				status: 'ready',
 				source: 'kv',
 				data: kvData
-			});
+			}, { headers: CACHE_HEADERS });
 		}
 	}
 

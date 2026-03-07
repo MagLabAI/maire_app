@@ -408,7 +408,14 @@ export interface CityData {
 	officialLists?: OfficialList[];
 	// Baseline data embedded by populate_cities.py
 	baselineStats?: Record<string, number>;
-	debtData?: { evolution2019_2024: number };
+	debtData?: {
+		debt2019?: number;
+		debt2024?: number;
+		perHab2019?: number;
+		perHab2024?: number;
+		perHabDelta?: number;
+		nationalMedianDelta?: number;
+	};
 	climateData?: Record<string, Record<string, [number | null, number | null, number | null]>>;
 	_dataTier?: 'baseline' | 'wikipedia' | 'research';
 	// Citation verification data
@@ -467,7 +474,14 @@ export interface BaselineCommune {
 		doctors?: number;
 		schools?: number;
 	};
-	debt?: { evolution2019_2024: number };
+	debt?: {
+		debt2019?: number;
+		debt2024?: number;
+		perHab2019?: number;
+		perHab2024?: number;
+		perHabDelta?: number;
+		nationalMedianDelta?: number;
+	};
 	election2020?: {
 		round: number;
 		turnoutPct: number | null;

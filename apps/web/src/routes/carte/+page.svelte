@@ -180,26 +180,27 @@
 		},
 		{
 			key: 'debt',
-			label: 'Dette 2019-2024',
-			shortLabel: 'Dette',
+			label: 'Dette par habitant 2019→2024',
+			shortLabel: 'Dette/hab',
 			prop: 'd',
-			unit: '%',
+			unit: '€/hab',
 			colorExpr: [
 				'case', ['has', 'd'],
 				['interpolate', ['linear'], ['get', 'd'],
-					-30, '#148038', -10, '#60b070', 0, '#e8e0d0', 15, '#d87060', 40, '#b81c1c'
+					-300, '#148038', -73, '#60b070', 0, '#e8e0d0', 200, '#d87060', 500, '#b81c1c'
 				],
 				'#d0d0d0'
 			],
 			legendStops: [
-				{ value: '-30%', color: '#148038' },
-				{ value: '0%', color: '#e8e0d0' },
-				{ value: '+40%', color: '#b81c1c' }
+				{ value: '-300 €/hab', color: '#148038' },
+				{ value: '-73 (médiane)', color: '#60b070' },
+				{ value: '0', color: '#e8e0d0' },
+				{ value: '+500 €/hab', color: '#b81c1c' }
 			],
-			thresholds: [0, 20],
-			formatValue: (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(0)}%`,
-			axisLabels: ['Reduction', 'Hausse'],
-			rangeLabels: ['-30%', '+40%']
+			thresholds: [0, 200],
+			formatValue: (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)} €/hab`,
+			axisLabels: ['Désendettement', 'Hausse'],
+			rangeLabels: ['-300 €/hab', '+500 €/hab']
 		},
 		{
 			key: 'income',
@@ -385,9 +386,9 @@
 		'participation-participation2014': 'Évolution de la participation entre 2014 et 2020. Vert = participation en hausse, corail = en baisse. La diagonale montre les villes stables.',
 		'participation-participation2008': 'Évolution de la participation entre 2008 et 2020. Vert = participation en hausse, corail = en baisse. Tendance sur 12 ans.',
 		'participation2008-participation2014': 'Évolution de la participation entre 2008 et 2014. Vert = participation en hausse, corail = en baisse.',
-		'debt-participation': 'Les villes endettées mobilisent-elles davantage leurs électeurs ? Comparez les zones où forte dette coïncide avec forte ou faible participation.',
-		'debt-participation2014': 'Même analyse dette × participation pour le scrutin 2014.',
-		'debt-participation2008': 'Même analyse dette × participation pour le scrutin 2008.',
+		'debt-participation': 'Les villes où la dette/hab a le plus augmenté mobilisent-elles davantage leurs électeurs ? Médiane nationale : -73 €/hab (désendettement).',
+		'debt-participation2014': 'Même analyse dette/hab × participation pour le scrutin 2014. Médiane nationale : -73 €/hab.',
+		'debt-participation2008': 'Même analyse dette/hab × participation pour le scrutin 2008. Médiane nationale : -73 €/hab.',
 		'growth-participation': 'Les villes en croissance votent-elles moins ? Observez si les zones en expansion démographique montrent un désengagement civique.',
 		'growth-participation2014': 'Croissance et participation en 2014 : même dynamique qu\'en 2020 ?',
 		'growth-participation2008': 'Croissance et participation en 2008 : les villes en déclin votaient-elles déjà moins ?',
@@ -398,10 +399,10 @@
 		'participation2008-temperature100': 'Participation 2008 et projections 2100 : les zones menacées votaient-elles davantage ?',
 		'participation2014-temperature': 'Climat et participation 2014 : les régions chaudes participent-elles moins ?',
 		'participation2014-temperature100': 'Participation 2014 et projections 2100 : les futurs territoires chauds votent-ils différemment ?',
-		'debt-growth': 'Les villes en croissance s\'endettent-elles pour financer leurs équipements ? Identifiez les zones où croissance rime avec investissement.',
-		'debt-income': 'Les communes riches sont-elles moins endettées ? Repérer les anomalies : villes aisées mais fortement endettées, ou modestes mais bien gérées.',
-		'debt-temperature': 'Les villes du sud, plus exposées au réchauffement, portent-elles aussi une dette plus lourde ? Double vulnérabilité climatique et financière.',
-		'debt-temperature100': 'Même analyse à horizon 2100 : les territoires les plus menacés par le réchauffement sont-ils aussi les plus fragiles financièrement ?',
+		'debt-growth': 'Les villes en croissance s\'endettent-elles pour financer leurs équipements ? Comparez hausse de dette/hab et croissance démographique. Médiane : -73 €/hab.',
+		'debt-income': 'Les communes riches sont-elles moins endettées ? Repérez les anomalies : villes aisées mais dette/hab en forte hausse, ou modestes mais bien gérées.',
+		'debt-temperature': 'Les villes du sud, plus exposées au réchauffement, voient-elles aussi leur dette/hab augmenter ? Double vulnérabilité climatique et financière.',
+		'debt-temperature100': 'À horizon 2100 : les territoires les plus menacés par le réchauffement sont-ils aussi ceux dont la dette/hab augmente le plus ?',
 		'growth-income': 'Quelles villes attirent : les riches ou les abordables ? Comparez croissance démographique et niveau de revenus.',
 		'growth-temperature': 'Les régions chaudes perdent-elles des habitants, ou au contraire attirent-elles ? Migration et climat.',
 		'growth-temperature100': 'À horizon 2100, les zones les plus chaudes seront-elles désertées ? Projection croisée climat-démographie.',
@@ -629,14 +630,30 @@
 		if (browser) headerSearch.onSelect = null;
 	});
 
-	// Participation color scale matching the layer gradient
-	function participationColor(turnout: number): string {
-		if (turnout <= 0.25) return '#fef3c7';
-		if (turnout <= 0.40) return '#fcd34d';
-		if (turnout <= 0.55) return '#e8a020';
-		if (turnout <= 0.70) return '#c2410c';
-		return '#7c2d12';
+	// Linear interpolation between color stops (matches MapLibre layer gradients)
+	function lerpColor(value: number, stops: [number, string][]): string {
+		if (value <= stops[0][0]) return stops[0][1];
+		if (value >= stops[stops.length - 1][0]) return stops[stops.length - 1][1];
+		for (let i = 0; i < stops.length - 1; i++) {
+			const [v0, c0] = stops[i];
+			const [v1, c1] = stops[i + 1];
+			if (value <= v1) {
+				const t = (value - v0) / (v1 - v0);
+				const r0 = parseInt(c0.slice(1, 3), 16), g0 = parseInt(c0.slice(3, 5), 16), b0 = parseInt(c0.slice(5, 7), 16);
+				const r1 = parseInt(c1.slice(1, 3), 16), g1 = parseInt(c1.slice(3, 5), 16), b1 = parseInt(c1.slice(5, 7), 16);
+				const r = Math.round(r0 + t * (r1 - r0)), g = Math.round(g0 + t * (g1 - g0)), b = Math.round(b0 + t * (b1 - b0));
+				return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+			}
+		}
+		return stops[stops.length - 1][1];
 	}
+
+	const participationStops: [number, string][] = [[0.25,'#fef3c7'],[0.40,'#fcd34d'],[0.55,'#e8a020'],[0.70,'#c2410c'],[0.85,'#7c2d12']];
+	const growthStops: [number, string][] = [[-1.5,'#b81c1c'],[-0.5,'#d87060'],[0,'#e8e0d0'],[0.5,'#60b070'],[2,'#148038']];
+	const temp50Stops: [number, string][] = [[1.5,'#2563a8'],[2.0,'#80b0d0'],[2.2,'#e8c870'],[2.6,'#d06030'],[3.0,'#a81818']];
+	const temp100Stops: [number, string][] = [[2.0,'#2563a8'],[3.0,'#80b0d0'],[3.5,'#e8c870'],[4.5,'#d06030'],[5.5,'#a81818']];
+	const debtStops: [number, string][] = [[-300,'#148038'],[-73,'#60b070'],[0,'#e8e0d0'],[200,'#d87060'],[500,'#b81c1c']];
+	const incomeStops: [number, string][] = [[14000,'#8b5cf6'],[18000,'#a78bfa'],[21000,'#ddd6fe'],[25000,'#6ee7b7'],[32000,'#059669']];
 
 	function buildPopupHTML(f: Record<string, unknown>): string {
 		const popText = Number(f.p).toLocaleString('fr-FR');
@@ -646,11 +663,11 @@
 		const t14 = f.t14 ? Number(f.t14) : null;
 		const t08 = f.t08 ? Number(f.t08) : null;
 		if (t20 !== null) {
-			const c20 = participationColor(t20);
+			const c20 = lerpColor(t20, participationStops);
 			dataRows += `<div class="popup-row"><span class="popup-label">Participation 2020</span><span class="popup-value" style="color:${c20}">${Math.round(t20 * 100)}%</span></div>`;
 		}
 		if (t14 !== null) {
-			const c14 = participationColor(t14);
+			const c14 = lerpColor(t14, participationStops);
 			let delta = '';
 			if (t20 !== null) {
 				const diff = Math.round((t20 - t14) * 100);
@@ -659,7 +676,7 @@
 			dataRows += `<div class="popup-row"><span class="popup-label">Participation 2014</span><span class="popup-value"><span style="color:${c14}">${Math.round(t14 * 100)}%</span>${delta}</span></div>`;
 		}
 		if (t08 !== null) {
-			const c08 = participationColor(t08);
+			const c08 = lerpColor(t08, participationStops);
 			let delta = '';
 			if (t14 !== null) {
 				const diff = Math.round((t14 - t08) * 100);
@@ -667,11 +684,11 @@
 			}
 			dataRows += `<div class="popup-row"><span class="popup-label">Participation 2008</span><span class="popup-value"><span style="color:${c08}">${Math.round(t08 * 100)}%</span>${delta}</span></div>`;
 		}
-		if (f.g) dataRows += `<div class="popup-row"><span class="popup-label">Croissance pop.</span><span class="popup-value">${Number(f.g) > 0 ? '+' : ''}${Number(f.g).toFixed(1)}%</span></div>`;
-		if (f.tm) dataRows += `<div class="popup-row"><span class="popup-label">Temp. 2050</span><span class="popup-value">+${Number(f.tm).toFixed(1)}°C</span></div>`;
-		if (f.tm1) dataRows += `<div class="popup-row"><span class="popup-label">Temp. 2100</span><span class="popup-value">+${Number(f.tm1).toFixed(1)}°C</span></div>`;
-		if (f.d) dataRows += `<div class="popup-row"><span class="popup-label">Dette 2019-24</span><span class="popup-value">${Number(f.d) > 0 ? '+' : ''}${Number(f.d).toFixed(0)}%</span></div>`;
-		if (f.mi) dataRows += `<div class="popup-row"><span class="popup-label">Revenu median</span><span class="popup-value">${(Number(f.mi) / 1000).toFixed(0)}k EUR</span></div>`;
+		if (f.g) { const v = Number(f.g); dataRows += `<div class="popup-row"><span class="popup-label">Croissance pop.</span><span class="popup-value" style="color:${lerpColor(v, growthStops)}">${v > 0 ? '+' : ''}${v.toFixed(1)}%</span></div>`; }
+		if (f.tm) { const v = Number(f.tm); dataRows += `<div class="popup-row"><span class="popup-label">Temp. 2050</span><span class="popup-value" style="color:${lerpColor(v, temp50Stops)}">+${v.toFixed(1)}°C</span></div>`; }
+		if (f.tm1) { const v = Number(f.tm1); dataRows += `<div class="popup-row"><span class="popup-label">Temp. 2100</span><span class="popup-value" style="color:${lerpColor(v, temp100Stops)}">+${v.toFixed(1)}°C</span></div>`; }
+		if (f.d != null) { const v = Number(f.d); dataRows += `<div class="popup-row"><span class="popup-label">Dette/hab 2019→24</span><span class="popup-value" style="color:${lerpColor(v, debtStops)}">${v > 0 ? '+' : ''}${Math.round(v)} €/hab</span></div>`; }
+		if (f.mi) { const v = Number(f.mi); dataRows += `<div class="popup-row"><span class="popup-label">Revenu median</span><span class="popup-value" style="color:${lerpColor(v, incomeStops)}">${(v / 1000).toFixed(0)}k EUR</span></div>`; }
 		const mayorRow = f.m ? `<div class="popup-mayor">Maire : ${f.m}</div>` : '';
 		return `
 			<div class="carte-popup">
