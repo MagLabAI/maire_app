@@ -1,95 +1,5 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { onMount } from 'svelte';
 	import SeoMeta from '$lib/components/SeoMeta.svelte';
-
-	// Newsletter registration state
-	let nlEmail = $state('');
-	let nlStatus = $state<'idle' | 'loading' | 'success' | 'error'>('idle');
-	let nlMessage = $state('');
-	let turnstileToken = $state('');
-	let turnstileReady = $state(false);
-
-	// Turnstile site key — set via env or fallback to Cloudflare test key in dev
-	const TURNSTILE_SITEKEY = import.meta.env.PUBLIC_TURNSTILE_SITEKEY || '1x00000000000000000000AA';
-
-	// Load Turnstile script + render widget
-	onMount(() => {
-		if (!browser) return;
-
-		const existing = document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]');
-		if (existing) {
-			renderTurnstile();
-			return;
-		}
-
-		const script = document.createElement('script');
-		script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad';
-		script.async = true;
-
-		(window as Record<string, unknown>).onTurnstileLoad = () => renderTurnstile();
-		document.head.appendChild(script);
-	});
-
-	function renderTurnstile() {
-		const w = window as Record<string, unknown>;
-		if (!w.turnstile) return;
-
-		const turnstile = w.turnstile as {
-			render: (el: HTMLElement, opts: Record<string, unknown>) => void;
-		};
-
-		// Render into all containers on the page
-		document.querySelectorAll('.turnstile-container').forEach((el) => {
-			if (el.children.length > 0) return;
-			turnstile.render(el as HTMLElement, {
-				sitekey: TURNSTILE_SITEKEY,
-				theme: 'light',
-				size: 'flexible',
-				callback: (token: string) => {
-					turnstileToken = token;
-					turnstileReady = true;
-				},
-				'expired-callback': () => {
-					turnstileToken = '';
-					turnstileReady = false;
-				}
-			});
-		});
-	}
-
-	async function submitNewsletter(e: Event) {
-		e.preventDefault();
-		if (nlStatus === 'loading') return;
-
-		const email = nlEmail.trim().toLowerCase();
-		if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			nlStatus = 'error';
-			nlMessage = 'Veuillez entrer une adresse email valide.';
-			return;
-		}
-
-		nlStatus = 'loading';
-		try {
-			const res = await fetch('/api/newsletter', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, token: turnstileToken })
-			});
-			const result = await res.json();
-
-			if (res.ok) {
-				nlStatus = 'success';
-				nlMessage = result.message;
-			} else {
-				nlStatus = 'error';
-				nlMessage = result.message || 'Une erreur est survenue.';
-			}
-		} catch {
-			nlStatus = 'error';
-			nlMessage = 'Erreur réseau. Veuillez réessayer.';
-		}
-	}
 </script>
 
 <svelte:head>
@@ -113,35 +23,7 @@
 				Ces fonctionnalités sont des pistes de réflexion — leur développement dépendra
 				des retours et de l'intérêt que suscite cette expérience.
 			</p>
-			{#if nlStatus === 'success'}
-				<div class="hero-success">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-					</svg>
-					<span>{nlMessage}</span>
-				</div>
-			{:else}
-				<form class="hero-form" onsubmit={submitNewsletter}>
-					<div class="hero-form-row">
-						<input
-							type="email"
-							placeholder="votre@email.fr"
-							bind:value={nlEmail}
-							required
-							class="hero-input"
-							disabled={nlStatus === 'loading'}
-						/>
-						<button type="submit" class="hero-cta" disabled={nlStatus === 'loading'}>
-							{nlStatus === 'loading' ? 'Inscription...' : 'Rester informé(e)'}
-						</button>
-					</div>
-					<div class="turnstile-container"></div>
-					{#if nlStatus === 'error'}
-						<p class="hero-error">{nlMessage}</p>
-					{/if}
-					<p class="hero-form-hint">Recevez les actualités et l'accès en avant-première. Pas de spam.</p>
-				</form>
-			{/if}
+			<a href="/elections/municipales-2026" class="hero-cta">Découvrir les candidats</a>
 		</div>
 	</section>
 
@@ -599,37 +481,12 @@
 		<div class="cta-content">
 			<h2>L'IA au service de la démocratie</h2>
 			<p>Découvrez ce que l'IA peut apporter à la transparence démocratique.</p>
-			{#if nlStatus === 'success'}
-				<div class="hero-success" style="justify-content: center;">
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-					</svg>
-					<span style="color: var(--color-gold-light);">{nlMessage}</span>
-				</div>
-			{:else}
-				<form class="cta-form" onsubmit={submitNewsletter}>
-					<div class="hero-form-row" style="justify-content: center;">
-						<input
-							type="email"
-							placeholder="votre@email.fr"
-							bind:value={nlEmail}
-							required
-							class="hero-input"
-							disabled={nlStatus === 'loading'}
-						/>
-						<button type="submit" class="cta-button" disabled={nlStatus === 'loading'}>
-							{nlStatus === 'loading' ? 'Inscription...' : 'Rester informé(e)'}
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-							</svg>
-						</button>
-					</div>
-					<div class="turnstile-container" style="display: flex; justify-content: center; margin-top: 0.5rem;"></div>
-					{#if nlStatus === 'error'}
-						<p class="hero-error">{nlMessage}</p>
-					{/if}
-				</form>
-			{/if}
+			<a href="/elections/municipales-2026" class="cta-button">
+				Explorer les municipales 2026
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+				</svg>
+			</a>
 			<div class="cta-links">
 				<a href="/gouvernance">Gouvernance municipale</a>
 				<a href="/devenir-maire">Devenir maire</a>
@@ -739,72 +596,6 @@
 		opacity: 0.7;
 		cursor: wait;
 		transform: none;
-	}
-
-	/* Newsletter form */
-	.hero-form, .cta-form {
-		max-width: 480px;
-		margin: 0 auto;
-	}
-
-	.hero-form-row {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.hero-input {
-		flex: 1;
-		min-width: 200px;
-		padding: 0.875rem 1rem;
-		border-radius: var(--radius-md);
-		border: 2px solid rgba(201, 169, 98, 0.3);
-		background: rgba(255, 255, 255, 0.1);
-		color: #faf8f5;
-		font-size: 0.95rem;
-		outline: none;
-		transition: border-color 0.2s ease;
-	}
-
-	.hero-input::placeholder {
-		color: rgba(250, 248, 245, 0.5);
-	}
-
-	.hero-input:focus {
-		border-color: var(--color-gold);
-	}
-
-	.turnstile-container {
-		margin-top: 0.75rem;
-	}
-
-	.hero-form-hint {
-		font-size: 0.78rem;
-		color: rgba(250, 248, 245, 0.5);
-		margin: 0.5rem 0 0;
-	}
-
-	.hero-error {
-		color: var(--color-coral);
-		font-size: 0.85rem;
-		margin: 0.5rem 0 0;
-	}
-
-	.hero-success {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 1.5rem;
-		background: rgba(74, 157, 110, 0.15);
-		border: 1px solid rgba(74, 157, 110, 0.3);
-		border-radius: var(--radius-md);
-		color: var(--color-gold-light);
-		font-weight: 600;
-	}
-
-	.hero-success svg {
-		color: var(--color-success);
-		flex-shrink: 0;
 	}
 
 	/* Feature Sections */

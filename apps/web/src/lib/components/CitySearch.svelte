@@ -20,6 +20,11 @@
 	let fuseCitiesLen = 0;
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
+	// Strip accents and hyphens so "moutiers" matches "Moûtiers", "Saint Denis" matches "Saint-Denis"
+	function norm(s: string): string {
+		return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/-/g, ' ');
+	}
+
 	async function ensureFuse() {
 		if (fuseInstance && fuseCitiesLen === cities.length) return;
 		fuseCitiesLen = cities.length;
@@ -30,6 +35,11 @@
 				{ name: 'department', weight: 0.2 },
 				{ name: 'slug', weight: 0.1 }
 			],
+			getFn: (obj: Record<string, unknown>, path: string | string[]) => {
+				const key = Array.isArray(path) ? path[0] : path;
+				const val = (obj as Record<string, unknown>)[key];
+				return typeof val === 'string' ? norm(val) : val != null ? String(val) : '';
+			},
 			threshold: 0.3,
 			distance: 80,
 			minMatchCharLength: 2,
@@ -48,7 +58,10 @@
 			results = [];
 			return;
 		}
-		results = fuseInstance.search(q, { limit: 8 }).map((r) => r.item);
+		results = fuseInstance
+			.search(norm(q), { limit: 8 })
+			.map((r) => r.item)
+			.sort((a, b) => b.population - a.population);
 	}
 
 	function handleInput() {
@@ -75,7 +88,27 @@
 		isOpen = false;
 	}
 
+	function goToSearchPage() {
+		const q = query.trim();
+		if (q.length >= 2) {
+			goto(`/recherche?q=${encodeURIComponent(q)}`);
+			query = '';
+			results = [];
+			isOpen = false;
+		}
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			if (selectedIndex >= 0 && results.length > 0) {
+				handleSelect(results[selectedIndex]);
+			} else {
+				goToSearchPage();
+			}
+			return;
+		}
+
 		if (!isOpen || results.length === 0) return;
 
 		if (e.key === 'ArrowDown') {
@@ -84,9 +117,6 @@
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			selectedIndex = Math.max(selectedIndex - 1, 0);
-		} else if (e.key === 'Enter' && selectedIndex >= 0) {
-			e.preventDefault();
-			handleSelect(results[selectedIndex]);
 		} else if (e.key === 'Escape') {
 			isOpen = false;
 		}
@@ -130,6 +160,16 @@
 				×
 			</button>
 		{/if}
+		<button
+			class="search-go"
+			onclick={goToSearchPage}
+			aria-label="Rechercher"
+			disabled={query.trim().length < 2}
+		>
+			<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+			</svg>
+		</button>
 	</div>
 
 	{#if isOpen && results.length > 0}
@@ -153,6 +193,12 @@
 					{/if}
 				</button>
 			{/each}
+			<button class="search-all" onclick={goToSearchPage}>
+				Voir tous les résultats pour « {query} »
+				<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+				</svg>
+			</button>
 		</div>
 	{:else if isOpen && query.length >= 2 && results.length === 0}
 		<div class="search-results">
@@ -168,6 +214,7 @@
 		position: relative;
 		width: 100%;
 		max-width: 500px;
+		z-index: 100;
 	}
 
 	.search-input-wrapper {
@@ -187,7 +234,7 @@
 
 	.search-input {
 		width: 100%;
-		padding: 1rem 3rem 1rem 3rem;
+		padding: 1rem 5.5rem 1rem 3rem;
 		font-size: 1rem;
 		background: var(--color-card-bg);
 		border: 2px solid var(--color-card-border);
@@ -209,7 +256,7 @@
 
 	.search-clear {
 		position: absolute;
-		right: 1rem;
+		right: 3.25rem;
 		width: 24px;
 		height: 24px;
 		display: flex;
@@ -226,6 +273,31 @@
 	.search-clear:hover {
 		background: var(--color-coral);
 		color: white;
+	}
+
+	.search-go {
+		position: absolute;
+		right: 0.5rem;
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-gold);
+		border: none;
+		border-radius: var(--radius-md);
+		color: var(--color-navy);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.search-go:hover:not(:disabled) {
+		background: var(--color-gold-light);
+	}
+
+	.search-go:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 
 	/* Results Dropdown */
@@ -304,9 +376,30 @@
 		color: var(--color-text-light);
 	}
 
+	.search-all {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-gold);
+		background: none;
+		border: none;
+		border-top: 1px solid var(--color-card-border);
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.search-all:hover {
+		background: var(--color-cream);
+	}
+
 	/* Compact mode */
 	.compact .search-input {
-		padding: 0.5rem 2.5rem 0.5rem 2.25rem;
+		padding: 0.5rem 4.5rem 0.5rem 2.25rem;
 		font-size: 0.85rem;
 		min-height: 36px;
 		border-width: 1px;
@@ -320,10 +413,22 @@
 	}
 
 	.compact .search-clear {
-		right: 0.5rem;
+		right: 2.75rem;
 		width: 18px;
 		height: 18px;
 		font-size: 12px;
+	}
+
+	.compact .search-go {
+		width: 32px;
+		height: 32px;
+		right: 0.25rem;
+		border-radius: var(--radius-sm);
+	}
+
+	.compact .search-go svg {
+		width: 14px;
+		height: 14px;
 	}
 
 	.compact .search-results {

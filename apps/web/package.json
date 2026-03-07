@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"fuse.js": "^7.1.0",
-		"maplibre-gl": "^5.18.0"
+		"maplibre-gl": "^5.18.0",
+		"onnxruntime-node": "^1.24.3"
 	}
 }

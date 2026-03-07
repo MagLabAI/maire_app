@@ -19,8 +19,9 @@ export function getAuthUrl(url: URL): string {
 	return PRODUCTION_AUTH_URL;
 }
 
-// Wikimedia Commons: full-res → thumbnail (saves ~90% bandwidth on candidate photos)
+// Candidate photo URL: local paths pass through, Wikimedia URLs get thumbnailed
 export function wikiThumb(url: string, width = 400): string {
+	if (!url.includes('wikimedia.org')) return url;
 	const match = url.match(/upload\.wikimedia\.org\/wikipedia\/(\w+)\/(\w\/\w+)\/(.+)/);
 	if (!match) return url;
 	const [, project, hash, file] = match;

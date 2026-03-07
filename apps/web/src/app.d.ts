@@ -27,8 +27,6 @@ declare global {
 				// Grok-4 API
 				XAI_API_KEY?: string;
 				GROK_API_KEY?: string;
-				// Cloudflare Turnstile (bot protection)
-				TURNSTILE_SECRET?: string;
 				// D1 Database (research queue)
 				DB: D1Database;
 				// KV Namespace (city data storage)

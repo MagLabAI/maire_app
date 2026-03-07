@@ -466,7 +466,6 @@
 		display: flex;
 		align-items: center;
 		padding: 1.5rem 0 2rem;
-		overflow: hidden;
 	}
 
 	@media (min-width: 640px) {
@@ -477,6 +476,7 @@
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-cream-dark) 100%);
+		overflow: hidden;
 	}
 
 	.hero-bg::before {
@@ -642,6 +642,8 @@
 		display: flex;
 		justify-content: center;
 		margin-bottom: 1.25rem;
+		position: relative;
+		z-index: 100;
 	}
 
 	.hero-popular {

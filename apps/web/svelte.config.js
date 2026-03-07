@@ -57,7 +57,8 @@ const config = {
 			'/sitemap-2026.xml',
 			'/sitemap-2020.xml',
 				'/carte',
-				'/faq'
+				'/faq',
+				'/recherche'
 			],
 			handleHttpError: 'warn',
 			handleUnseenRoutes: 'ignore'

@@ -197,21 +197,24 @@
 	let missingOfficialHeads = $derived(() => {
 		const heads = headCandidates();
 		if (!heads.length || !officialLists.length) return [];
+		// Strip accents for comparison (research has "Guéguen", official CSV has "GUEGUEN")
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 		const researchNames = new Set(
-			heads.map(c => c.lastName.toUpperCase().trim())
+			heads.map(c => norm(c.lastName))
 		);
 		// Match: exact hit OR official's last word is a suffix of a research compound name
 		const isMatched = (officialLastName: string) => {
-			if (researchNames.has(officialLastName)) return true;
+			const n = norm(officialLastName);
+			if (researchNames.has(n)) return true;
 			for (const rn of researchNames) {
-				if (rn.endsWith(officialLastName) || officialLastName.endsWith(rn)) return true;
+				if (rn.endsWith(n) || n.endsWith(rn)) return true;
 			}
 			return false;
 		};
 		return officialLists
 			.filter(list => {
 				const parts = list.headCandidate.split(' ');
-				const lastName = parts[parts.length - 1].toUpperCase().trim();
+				const lastName = parts[parts.length - 1];
 				return !isMatched(lastName);
 			})
 			.map(list => {
@@ -1108,6 +1111,25 @@
 											</div>
 										</div>
 									{/each}
+								</div>
+
+								<div class="official-interest-cta">
+									<button
+										class="interest-btn"
+										onclick={(e) => {
+											const btn = e.currentTarget;
+											btn.classList.add('interest-sent');
+											btn.disabled = true;
+											fetch(`/api/interest/${data.citySlug}`, { method: 'POST' }).catch(() => {});
+										}}
+									>
+										<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+										</svg>
+										<span class="interest-default">J'habite ici, je veux voir l'analyse des programmes</span>
+										<span class="interest-thanks">Merci, votre intérêt est noté !</span>
+									</button>
+									<p class="official-interest-hint">Plus cette ville reçoit d'intérêt, plus vite elle sera enrichie.</p>
 								</div>
 							{:else}
 							<!-- No candidates and no official lists -->
@@ -3795,6 +3817,20 @@
 	}
 
 	.no-candidates-hint {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		margin-top: 0.75rem;
+		font-style: italic;
+	}
+
+	.official-interest-cta {
+		text-align: center;
+		margin-top: 2rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--color-card-border);
+	}
+
+	.official-interest-hint {
 		font-size: 0.75rem;
 		color: var(--color-text-muted);
 		margin-top: 0.75rem;
