@@ -82,7 +82,7 @@
 				</ul>
 			</div>
 
-			<!-- Légal -->
+			<!-- Informations + Open Data -->
 			<div>
 				<h4 class="font-display font-semibold text-lg mb-4">Informations</h4>
 				<ul class="space-y-3">
@@ -92,8 +92,13 @@
 						</a>
 					</li>
 					<li>
-						<a href="https://github.com/MagLabAI/maire.app" target="_blank" rel="noopener" class="text-[var(--color-text-light)] hover:text-[var(--color-gold)] transition-colors">
+						<a href="https://github.com/MagLabAI/maire_app" target="_blank" rel="noopener" class="text-[var(--color-text-light)] hover:text-[var(--color-gold)] transition-colors">
 							Code source (GitHub)
+						</a>
+					</li>
+					<li>
+						<a href="https://www.data.gouv.fr/reuses/maire-app" target="_blank" rel="noopener" class="text-[var(--color-text-light)] hover:text-[var(--color-gold)] transition-colors">
+							Réutilisation data.gouv.fr
 						</a>
 					</li>
 					<li>

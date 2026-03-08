@@ -109,7 +109,8 @@
 					<li>Aucun tracker publicitaire, aucun cookie de suivi</li>
 					<li>Hébergement en Union Européenne (Cloudflare Pages)</li>
 					<li>Aucune donnée de navigation revendue</li>
-					<li><a href="https://github.com/MagLabAI/maire.app" target="_blank" rel="noopener">Code source ouvert</a> — licence <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a> / <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></li>
+					<li><a href="https://github.com/MagLabAI/maire_app" target="_blank" rel="noopener">Code source ouvert</a> — licence <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT</a> / <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></li>
+					<li>Réutilisation officielle sur <a href="https://www.data.gouv.fr/reuses/maire-app" target="_blank" rel="noopener">data.gouv.fr</a></li>
 				</ul>
 				<p>
 					Pour plus de détails, consultez nos <a href="/mentions-legales">mentions légales</a>.

@@ -18,10 +18,14 @@
 		"@context": "https://schema.org",
 		"@type": "Organization",
 		"name": "MagLab Studio",
-		"url": "https://github.com/MagLabAI",
+		"url": "https://maire.app",
 		"logo": "https://maire.app/favicon.svg",
 		"description": "Projet communautaire open source utilisant l'IA pour la transparence des élections municipales françaises.",
-		"sameAs": ["https://github.com/MagLabAI/maire_app"]
+		"sameAs": [
+			"https://github.com/MagLabAI/maire_app",
+			"https://github.com/MagLabAI",
+			"https://www.data.gouv.fr/reuses/maire-app"
+		]
 	})}</script>`}
 	{@html `<script type="application/ld+json">${JSON.stringify({
 		"@context": "https://schema.org",

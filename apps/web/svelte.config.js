@@ -48,7 +48,6 @@ const config = {
 				'/elections/municipales-2026/rognaix',
 				'/mentions-legales',
 				'/corrections',
-				'/corrections/stats',
 				'/gouvernance',
 				'/devenir-maire',
 				'/couverture',

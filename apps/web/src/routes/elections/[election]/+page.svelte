@@ -146,13 +146,37 @@
 
 <svelte:head>
 	{#if data.election}
-		<title>{data.election.name} | maire.app</title>
-		<meta name="description" content="Découvrez les candidats aux {data.election.name}. {data.cities.length} villes couvertes." />
+		{@const isUpcoming = data.election.slug.includes('2026')}
+		{@const hubDesc = isUpcoming
+			? `Élections municipales 2026 : comparez les candidats et programmes dans ${data.cities.length.toLocaleString('fr-FR')} communes. Listes officielles, profils, enjeux locaux.`
+			: `Résultats des ${data.election.name}. ${data.cities.length} villes couvertes.`}
+		<title>{data.election.name} — candidats et programmes | maire.app</title>
+		<meta name="description" content={hubDesc} />
 		<SeoMeta
-			title="{data.election.name} | maire.app"
-			description="Découvrez les candidats aux {data.election.name}. {data.cities.length} villes couvertes."
+			title="{data.election.name} — candidats et programmes | maire.app"
+			description={hubDesc}
 			path="/elections/{data.election.slug}"
 		/>
+		{@html `<script type="application/ld+json">${JSON.stringify({
+			"@context": "https://schema.org",
+			"@type": "CollectionPage",
+			"name": data.election.name,
+			"url": `https://maire.app/elections/${data.election.slug}`,
+			"description": hubDesc,
+			"inLanguage": "fr",
+			"isPartOf": { "@type": "WebSite", "@id": "https://maire.app" },
+			"mainEntity": {
+				"@type": "ItemList",
+				"name": `Communes — ${data.election.name}`,
+				"numberOfItems": data.cities.length,
+				"itemListElement": data.cities.slice(0, 20).map((c: {name: string; slug: string}, i: number) => ({
+					"@type": "ListItem",
+					"position": i + 1,
+					"name": c.name,
+					"url": `https://maire.app/elections/${data.election.slug}/${c.slug}`
+				}))
+			}
+		})}</script>`}
 	{:else}
 		<title>Élection non trouvée | maire.app</title>
 	{/if}
@@ -169,7 +193,7 @@
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 						</svg>
 					</a>
-					<h1 class="page-title">{data.election.nameShort}</h1>
+					<h1 class="page-title">{data.election.nameShort} — candidats et programmes</h1>
 				</div>
 				<div class="header-meta">
 					<span class="meta-date">

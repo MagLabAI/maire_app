@@ -399,13 +399,17 @@
 		/>
 	{:else if data.cityData}
 		<title>{data.cityData.city.name} - Municipales 2026 | maire.app</title>
-		<meta
-			name="description"
-			content="Découvrez les candidats aux élections municipales 2026 à {data.cityData.city.name}. Comparez les programmes et les profils."
-		/>
+		{@const descParts = [
+			`Municipales 2026 à ${data.cityData.city.name} (${formatNumber(data.cityData.city.population)} hab.)`,
+			data.cityData.city.listsCount ? `: ${data.cityData.city.listsCount} listes, ${data.cityData.city.candidatesCount || ''} candidats` : '',
+			data.cityData.city.incumbent?.name ? `. Maire sortant : ${data.cityData.city.incumbent.name}` : '',
+			'. Comparez programmes et profils.'
+		]}
+		{@const seoDesc = descParts.join('')}
+		<meta name="description" content={seoDesc} />
 		<SeoMeta
 			title="{data.cityData.city.name} - Municipales 2026 | maire.app"
-			description="Découvrez les {data.cityData.city.listsCount || ''} listes candidates aux municipales 2026 à {data.cityData.city.name} ({formatNumber(data.cityData.city.population)} hab.). Comparez les programmes, profils et propositions sur maire.app"
+			description={seoDesc}
 			path="/elections/{data.electionSlug}/{data.citySlug}"
 			type="article"
 		/>
@@ -430,29 +434,40 @@
 			"name": `${data.cityData.city.name} - ${isPastElection ? 'Résultats Municipales 2020' : 'Municipales 2026'}`,
 			"url": `https://maire.app/elections/${data.electionSlug}/${data.citySlug}`,
 			"inLanguage": "fr",
+			"isPartOf": { "@type": "WebSite", "@id": "https://maire.app" },
 			"about": {
 				"@type": "City",
 				"name": data.cityData.city.name,
+				...(data.cityData.city.lat && data.cityData.city.lon ? { "geo": { "@type": "GeoCoordinates", "latitude": data.cityData.city.lat, "longitude": data.cityData.city.lon } } : {}),
 				"containedInPlace": { "@type": "AdministrativeArea", "name": data.cityData.city.region }
 			},
 			"mainEntity": {
 				"@type": "Event",
-				"name": `Élections municipales ${isPastElection ? '2020' : '2026'} - ${data.cityData.city.name}`,
+				"name": `Élections municipales ${isPastElection ? '2020' : '2026'} — ${data.cityData.city.name}`,
 				"startDate": isPastElection ? "2020-03-15" : "2026-03-15",
-				"location": { "@type": "City", "name": data.cityData.city.name }
+				"endDate": isPastElection ? "2020-06-28" : "2026-03-22",
+				"eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+				"eventStatus": "https://schema.org/EventScheduled",
+				"location": {
+					"@type": "City",
+					"name": data.cityData.city.name,
+					"address": { "@type": "PostalAddress", "addressLocality": data.cityData.city.name, "addressRegion": data.cityData.city.department, "addressCountry": "FR" }
+				},
+				"organizer": { "@type": "GovernmentOrganization", "name": "Ministère de l'Intérieur", "url": "https://www.interieur.gouv.fr" }
 			}
 		})}</script>`}
-		{#if !isPastElection && data.cityData._metadata?.generatedAt}
+		{#if !isPastElection}
 			{@html `<script type="application/ld+json">${JSON.stringify({
 				"@context": "https://schema.org",
 				"@type": "Article",
 				"headline": `Candidats municipales 2026 à ${data.cityData.city.name}`,
-				"datePublished": data.cityData._metadata.generatedAt.split('T')[0],
-				"dateModified": data.cityData._metadata.generatedAt.split('T')[0],
+				"datePublished": data.cityData._metadata?.generatedAt?.split('T')[0] || "2025-12-01",
+				"dateModified": data.cityData.lastUpdated?.split('T')[0] || data.cityData._metadata?.generatedAt?.split('T')[0] || "2025-12-01",
 				"author": { "@type": "Organization", "name": "MagLab Studio", "url": "https://github.com/MagLabAI" },
-				"publisher": { "@type": "Organization", "name": "maire.app", "url": "https://maire.app" },
+				"publisher": { "@type": "Organization", "name": "maire.app", "url": "https://maire.app", "logo": { "@type": "ImageObject", "url": "https://maire.app/favicon.svg" } },
 				"inLanguage": "fr",
-				"about": { "@type": "City", "name": data.cityData.city.name }
+				"about": { "@type": "City", "name": data.cityData.city.name },
+				"keywords": `municipales 2026, élections municipales, ${data.cityData.city.name}, candidats, ${data.cityData.city.department}`
 			})}</script>`}
 		{/if}
 	{/if}
@@ -474,7 +489,7 @@
 							</a>
 							<span class="past-badge">Résultats 2020</span>
 						</div>
-						<h1 class="past-city-name">{data.cityData.city.name}</h1>
+						<h1 class="past-city-name">Résultats municipales 2020 — {data.cityData.city.name}</h1>
 						<div class="city-stats">
 							<span class="stat-pill">{data.cityData.city.department}</span>
 							<span class="stat-pill">
@@ -806,7 +821,7 @@
 		<header class="city-hero" class:has-compare-bar={!comparison.isEmpty}>
 			<div class="hero-content">
 				<div class="hero-main">
-					<h1 class="city-name">{data.cityData.city.name}</h1>
+					<h1 class="city-name">Municipales 2026 — {data.cityData.city.name}</h1>
 					<div class="city-stats">
 						<span class="stat-pill">
 							<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

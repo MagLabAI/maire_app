@@ -8,6 +8,12 @@
 /data/*
   Cache-Control: public, max-age=60, s-maxage=300
 
+/elections/*
+  Cache-Control: public, max-age=0, s-maxage=300
+
+/sitemap*.xml
+  Cache-Control: public, max-age=3600, s-maxage=3600
+
 /favicon.ico
   Cache-Control: public, max-age=604800
 

@@ -164,8 +164,8 @@
 			</div>
 
 			<h1 class="hero-title">
-				Découvrez vos
-				<span class="text-gradient-gold">candidats</span>
+				Élections municipales 2026 :
+				<span class="text-gradient-gold">comparez les candidats</span>
 			</h1>
 
 			<p class="hero-subtitle">
