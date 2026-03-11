@@ -222,7 +222,7 @@
 	<div class="map-showcase-header">
 		<div class="container-app">
 			<div class="map-showcase-title-row">
-				<h2 class="map-showcase-title">34 968 communes, une carte</h2>
+				<a href="/carte" class="map-showcase-title">34 968 communes, une carte</a>
 				<a href="/carte" class="map-showcase-cta">
 					Explorer en plein écran
 					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -701,6 +701,11 @@
 		font-size: 1.1rem;
 		font-weight: 600;
 		color: var(--color-foreground);
+		text-decoration: none;
+	}
+
+	.map-showcase-title:hover {
+		color: var(--color-gold);
 	}
 
 	@media (min-width: 640px) {

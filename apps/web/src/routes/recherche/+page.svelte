@@ -135,8 +135,16 @@
 	{:else if query.length >= 2}
 		<p class="search-count">{results.length} résultat{results.length > 1 ? 's' : ''} pour « {query} »</p>
 
+		{#if grouped().length > 1}
+			<nav class="dept-nav" aria-label="Navigation par département">
+				{#each grouped() as group}
+					<a href="#dept-{group.dept.replace(/\s/g, '-')}" class="dept-nav-btn">{group.dept}</a>
+				{/each}
+			</nav>
+		{/if}
+
 		{#each grouped() as group}
-			<section class="dept-section">
+			<section class="dept-section" id="dept-{group.dept.replace(/\s/g, '-')}">
 				<h2 class="dept-title">{group.dept}</h2>
 				<div class="results-grid">
 					{#each group.cities as city (city.slug)}
@@ -232,8 +240,43 @@
 		margin-bottom: 1.5rem;
 	}
 
+	.dept-nav {
+		display: flex;
+		gap: 0.375rem;
+		overflow-x: auto;
+		padding: 0.75rem 0;
+		margin-bottom: 1rem;
+		position: sticky;
+		top: 48px;
+		z-index: 10;
+		background: var(--color-background, var(--color-cream));
+		scrollbar-width: thin;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.dept-nav-btn {
+		flex-shrink: 0;
+		padding: 0.35rem 0.7rem;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--color-text-light);
+		background: var(--color-card-bg);
+		border: 1px solid var(--color-card-border);
+		border-radius: var(--radius-sm);
+		text-decoration: none;
+		white-space: nowrap;
+		transition: all 0.15s ease;
+	}
+
+	.dept-nav-btn:hover {
+		color: var(--color-navy);
+		border-color: var(--color-gold);
+		background: var(--color-gold-light);
+	}
+
 	.dept-section {
 		margin-bottom: 1.5rem;
+		scroll-margin-top: 6rem;
 	}
 
 	.dept-title {

@@ -350,10 +350,16 @@
 													<span class="context-stat-key">Bac+5</span>
 												</span>
 											{/if}
-											{#if data.debtData?.evolution2019_2024 != null}
+											{#if data.debtData?.perHabDelta != null}
 												<span class="context-stat">
-													<span class="context-stat-val {data.debtData.evolution2019_2024 > 20 ? 'stat-negative' : data.debtData.evolution2019_2024 < -10 ? 'stat-positive' : ''}">{data.debtData.evolution2019_2024 > 0 ? '+' : ''}{data.debtData.evolution2019_2024.toFixed(0)}%</span>
+													<span class="context-stat-val {data.debtData.perHabDelta > 0 ? 'stat-negative' : data.debtData.perHabDelta < -50 ? 'stat-positive' : ''}">{data.debtData.perHabDelta > 0 ? '+' : ''}{Math.round(data.debtData.perHabDelta)} €/hab</span>
 													<span class="context-stat-key">Dette 2019→24</span>
+												</span>
+											{/if}
+											{#if data.debtData?.perHab2024 != null}
+												<span class="context-stat">
+													<span class="context-stat-val">{Math.round(data.debtData.perHab2024).toLocaleString('fr-FR')} €</span>
+													<span class="context-stat-key">Dette/hab 2024</span>
 												</span>
 											{/if}
 										</div>
