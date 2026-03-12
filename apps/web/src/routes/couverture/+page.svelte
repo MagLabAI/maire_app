@@ -69,14 +69,14 @@
 </script>
 
 <svelte:head>
-	<title>Couverture | maire.app</title>
+	<title>Couverture des communes de France — statistiques et analyses | maire.app</title>
 	<meta
 		name="description"
-		content="Couverture de maire.app : {cov.enrichedTotal} villes analysées sur {cov.citiesOver1000.toLocaleString('fr-FR')} communes de plus de 1 000 habitants."
+		content="Couverture de maire.app : {cov.enrichedTotal} villes analysées sur {cov.citiesOver1000.toLocaleString('fr-FR')} communes de plus de 1 000 habitants. Statistiques INSEE, finances municipales, projections climatiques et candidats par département et région."
 	/>
 	<SeoMeta
-		title="Couverture | maire.app"
-		description="Couverture de maire.app : {cov.enrichedTotal} villes analysées sur {cov.citiesOver1000.toLocaleString('fr-FR')} communes."
+		title="Couverture des communes de France — statistiques et analyses | maire.app"
+		description="Couverture de maire.app : {cov.enrichedTotal} villes analysées sur {cov.citiesOver1000.toLocaleString('fr-FR')} communes. Statistiques INSEE, finances, climat et candidats par région."
 		path="/couverture"
 	/>
 </svelte:head>

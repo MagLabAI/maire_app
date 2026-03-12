@@ -711,16 +711,42 @@
 </script>
 
 <svelte:head>
-	<title>Carte interactive | maire.app</title>
-	<meta name="description" content="Explorez la carte interactive des 34 000 communes de France. Participation electorale 2020, projections climatiques, dette, revenus." />
+	<title>Carte des communes de France — participation, climat, dette, revenus | maire.app</title>
+	<meta name="description" content="Carte interactive des 34 000 communes françaises. Visualisez et comparez : taux de participation électorale (2008, 2014, 2020), projections climatiques DRIAS 2050 et 2100, dette par habitant (évolution 2019-2024), revenu médian et croissance démographique. Superposez deux indicateurs pour croiser les données." />
 	<SeoMeta
-		title="Carte interactive — maire.app"
-		description="Explorez la carte interactive des 34 000 communes de France. Participation, climat, dette, revenus."
+		title="Carte des communes de France — participation, climat, dette, revenus | maire.app"
+		description="Carte interactive des 34 000 communes françaises. Visualisez et comparez : participation électorale (2008-2020), projections climatiques 2050-2100, dette par habitant, revenu médian et croissance démographique."
 		path="/carte"
 	/>
+	{@html `<script type="application/ld+json">${JSON.stringify({
+		"@context": "https://schema.org",
+		"@type": "Dataset",
+		"name": "Carte interactive des communes de France — données municipales",
+		"description": "Données socio-économiques et électorales de 34 000 communes françaises : participation aux élections municipales (2008, 2014, 2020), projections climatiques DRIAS (2050, 2100), dette par habitant (OFGL/DGFiP 2019-2024), revenu médian (INSEE) et croissance démographique.",
+		"url": "https://maire.app/carte",
+		"license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+		"creator": { "@type": "Organization", "name": "MagLab Studio", "url": "https://maire.app" },
+		"temporalCoverage": "2008/2026",
+		"spatialCoverage": { "@type": "Place", "name": "France", "geo": { "@type": "GeoShape", "box": "-5.14 41.33 9.56 51.09" } },
+		"distribution": [
+			{ "@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://maire.app/data/map-data.json" }
+		],
+		"variableMeasured": [
+			{ "@type": "PropertyValue", "name": "Participation électorale 2020", "unitText": "%" },
+			{ "@type": "PropertyValue", "name": "Participation électorale 2014", "unitText": "%" },
+			{ "@type": "PropertyValue", "name": "Participation électorale 2008", "unitText": "%" },
+			{ "@type": "PropertyValue", "name": "Projection température 2050", "unitText": "°C" },
+			{ "@type": "PropertyValue", "name": "Projection température 2100", "unitText": "°C" },
+			{ "@type": "PropertyValue", "name": "Dette par habitant (évolution 2019-2024)", "unitText": "€/hab" },
+			{ "@type": "PropertyValue", "name": "Revenu médian", "unitText": "€/an" },
+			{ "@type": "PropertyValue", "name": "Croissance démographique", "unitText": "%/an" }
+		],
+		"keywords": ["communes france", "carte élections municipales", "participation électorale", "abstention", "projections climatiques", "dette municipale", "revenu médian", "démographie"]
+	})}</script>`}
 </svelte:head>
 
 <div class="carte-page" class:dark>
+	<h1 class="sr-only">Carte interactive des 34 000 communes de France — participation, climat, dette et revenus</h1>
 	<div class="carte-map" bind:this={mapContainer}></div>
 
 	<!-- DOM-TOM navigation -->
@@ -978,9 +1004,33 @@
 			{/if}
 		</div>
 	{/if}
+
+	<div class="sr-only" aria-hidden="false">
+		<h2>Données disponibles sur la carte</h2>
+		<p>Cette carte interactive couvre les 34 000 communes de France métropolitaine et d'outre-mer (Guadeloupe, Martinique, Guyane, La Réunion, Mayotte, Saint-Pierre-et-Miquelon, Nouvelle-Calédonie).</p>
+		<h3>Participation électorale</h3>
+		<p>Taux de participation aux élections municipales de 2008, 2014 et 2020. Comparez l'évolution de l'abstention entre deux scrutins en superposant les couches.</p>
+		<h3>Projections climatiques</h3>
+		<p>Hausse des températures moyennes à horizon 2050 et 2100 selon les données DRIAS TRACC-2023 (Météo-France, IPSL, CERFACS).</p>
+		<h3>Finances municipales</h3>
+		<p>Évolution de la dette par habitant entre 2019 et 2024 (source : OFGL, DGFiP). Médiane nationale : -73 €/hab.</p>
+		<h3>Revenus et démographie</h3>
+		<p>Revenu médian par ménage (INSEE) et taux de croissance démographique annuel par commune.</p>
+	</div>
 </div>
 
 <style>
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
 	.carte-page {
 		position: relative;
 		width: 100%;

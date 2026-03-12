@@ -144,11 +144,11 @@
 </script>
 
 <svelte:head>
-	<title>maire.app — Élections Municipales 2026 | Candidats et programmes</title>
-	<meta name="description" content="Comparez les candidats et listes aux élections municipales 2026 dans votre commune. Programmes, profils, cartes interactives et outil de comparaison. Plateforme citoyenne indépendante — données ouvertes sur 34 000 communes." />
+	<title>maire.app — Élections Municipales 2026 | Candidats, programmes et statistiques</title>
+	<meta name="description" content="Comparez les candidats aux élections municipales 2026 dans votre commune. Programmes, statistiques INSEE, finances municipales, projections climatiques, taux de participation et carte interactive. Plateforme citoyenne indépendante — données ouvertes sur 34 000 communes." />
 	<SeoMeta
-		title="maire.app — Élections Municipales 2026 | Candidats et programmes"
-		description="Comparez les candidats et listes aux élections municipales 2026 dans votre commune. Programmes, profils, cartes interactives et outil de comparaison. Plateforme citoyenne indépendante — données ouvertes sur 34 000 communes."
+		title="maire.app — Élections Municipales 2026 | Candidats, programmes et statistiques"
+		description="Comparez les candidats aux élections municipales 2026 dans votre commune. Programmes, statistiques INSEE, finances municipales, projections climatiques, participation et carte interactive."
 		path="/"
 	/>
 </svelte:head>

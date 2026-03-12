@@ -161,11 +161,11 @@
 {/snippet}
 
 <svelte:head>
-	<title>Comparer les candidats {data.cityName ? `à ${data.cityName}` : ''} | maire.app</title>
-	<meta name="description" content="Comparaison des candidats municipales 2026{data.cityName ? ` à ${data.cityName}` : ''}. Programmes, profils et propositions côte à côte." />
+	<title>Comparer les candidats municipales 2026 {data.cityName ? `à ${data.cityName}` : ''} | maire.app</title>
+	<meta name="description" content="Comparaison des candidats aux élections municipales 2026{data.cityName ? ` à ${data.cityName}` : ''}. Programmes, propositions, expérience et positionnement politique côte à côte. Thèmes : transport, logement, environnement, économie." />
 	<SeoMeta
-		title="Comparer les candidats {data.cityName ? `à ${data.cityName}` : ''} | maire.app"
-		description="Comparaison des candidats municipales 2026{data.cityName ? ` à ${data.cityName}` : ''}. Programmes, profils et propositions côte à côte."
+		title="Comparer les candidats municipales 2026 {data.cityName ? `à ${data.cityName}` : ''} | maire.app"
+		description="Comparaison des candidats aux élections municipales 2026{data.cityName ? ` à ${data.cityName}` : ''}. Programmes, propositions, expérience et positionnement côte à côte."
 		path="/elections/{data.electionSlug}/{data.citySlug}/comparer"
 	/>
 </svelte:head>

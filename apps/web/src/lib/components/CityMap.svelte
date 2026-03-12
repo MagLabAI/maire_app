@@ -81,11 +81,15 @@
 					const turnoutLine = turnoutPct
 						? `<div class="map-popup-meta">Participation 2020 : ${turnoutPct}</div>`
 						: '';
+					const websiteLine = f.w
+						? `<a href="${f.w}" target="_blank" rel="noopener" class="map-popup-website">🏛 Site officiel</a>`
+						: '';
 					return `
 						<div class="map-popup">
 							<strong>${f.n}</strong>
 							<div class="map-popup-meta">${popText} hab.</div>
 							${turnoutLine}
+							${websiteLine}
 							<a href="/elections/${election}/${f.s}" class="map-popup-link">Voir la ville &rarr;</a>
 						</div>
 					`;
@@ -331,5 +335,17 @@
 	:global(.map-popup-link:hover) {
 		background: var(--color-gold);
 		color: var(--color-foreground);
+	}
+
+	:global(.map-popup-website) {
+		display: block;
+		margin-top: 0.25rem;
+		font-size: 0.7rem;
+		color: var(--color-navy);
+		text-decoration: none;
+	}
+
+	:global(.map-popup-website:hover) {
+		text-decoration: underline;
 	}
 </style>

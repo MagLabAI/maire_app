@@ -400,10 +400,10 @@
 	{:else if data.cityData}
 		<title>{data.cityData.city.name} - Municipales 2026 | maire.app</title>
 		{@const descParts = [
-			`Municipales 2026 à ${data.cityData.city.name} (${formatNumber(data.cityData.city.population)} hab.)`,
-			data.cityData.city.listsCount ? `: ${data.cityData.city.listsCount} listes, ${data.cityData.city.candidatesCount || ''} candidats` : '',
+			`Municipales 2026 à ${data.cityData.city.name} (${formatNumber(data.cityData.city.population)} hab., ${data.cityData.city.department})`,
+			data.cityData.city.listsCount ? ` : ${data.cityData.city.listsCount} listes, ${data.cityData.city.candidatesCount || ''} candidats` : '',
 			data.cityData.city.incumbent?.name ? `. Maire sortant : ${data.cityData.city.incumbent.name}` : '',
-			'. Comparez programmes et profils.'
+			'. Programmes, statistiques INSEE, finances, climat et participation.'
 		]}
 		{@const seoDesc = descParts.join('')}
 		<meta name="description" content={seoDesc} />
@@ -444,23 +444,76 @@
 			"mainEntity": {
 				"@type": "Event",
 				"name": `Élections municipales ${isPastElection ? '2020' : '2026'} — ${data.cityData.city.name}`,
+				"description": `${isPastElection ? 'Résultats des élections' : 'Élections'} municipales ${isPastElection ? '2020' : '2026'} à ${data.cityData.city.name} (${data.cityData.city.department}, ${data.cityData.city.region}). ${formatNumber(data.cityData.city.population)} habitants, ${data.cityData.city.listsCount || 0} listes candidates.`,
+				"image": "https://maire.app/og-default.png",
 				"startDate": isPastElection ? "2020-03-15" : "2026-03-15",
 				"endDate": isPastElection ? "2020-06-28" : "2026-03-22",
 				"eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-				"eventStatus": "https://schema.org/EventScheduled",
+				"eventStatus": isPastElection ? "https://schema.org/EventCompleted" : "https://schema.org/EventScheduled",
+				"inLanguage": "fr",
 				"location": {
-					"@type": "City",
-					"name": data.cityData.city.name,
+					"@type": "Place",
+					"name": `Bureaux de vote — ${data.cityData.city.name}`,
 					"address": { "@type": "PostalAddress", "addressLocality": data.cityData.city.name, "addressRegion": data.cityData.city.department, "addressCountry": "FR" }
 				},
-				"organizer": { "@type": "GovernmentOrganization", "name": "Ministère de l'Intérieur", "url": "https://www.interieur.gouv.fr" }
+				"organizer": { "@type": "GovernmentOrganization", "name": "Ministère de l'Intérieur", "url": "https://www.interieur.gouv.fr" },
+				"performer": { "@type": "GovernmentOrganization", "name": `Mairie de ${data.cityData.city.name}` },
+				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock", "url": `https://maire.app/elections/${data.electionSlug}/${data.citySlug}` }
 			}
 		})}</script>`}
+		{#if data.cityData.city.officialWebsite}
+			{@html `<script type="application/ld+json">${JSON.stringify({
+				"@context": "https://schema.org",
+				"@type": "GovernmentOrganization",
+				"name": `Mairie de ${data.cityData.city.name}`,
+				"url": data.cityData.city.officialWebsite,
+				"sameAs": data.cityData.city.officialWebsite,
+				"address": {
+					"@type": "PostalAddress",
+					"addressLocality": data.cityData.city.name,
+					"addressRegion": data.cityData.city.department,
+					"addressCountry": "FR"
+				},
+				...(data.cityData.city.lat && data.cityData.city.lon ? { "geo": { "@type": "GeoCoordinates", "latitude": data.cityData.city.lat, "longitude": data.cityData.city.lon } } : {})
+			})}</script>`}
+		{/if}
+		{#if data.cityData.baselineStats || data.climateData}
+			{@html `<script type="application/ld+json">${JSON.stringify({
+				"@context": "https://schema.org",
+				"@type": "Dataset",
+				"name": `Statistiques municipales — ${data.cityData.city.name}`,
+				"description": `Données socio-économiques et environnementales de ${data.cityData.city.name} (${data.cityData.city.department}) : ${[
+					data.cityData.baselineStats?.medianIncome ? `revenu médian ${Math.round(data.cityData.baselineStats.medianIncome).toLocaleString('fr-FR')} €/an` : '',
+					data.cityData.baselineStats?.popGrowth != null ? `croissance démographique ${data.cityData.baselineStats.popGrowth > 0 ? '+' : ''}${data.cityData.baselineStats.popGrowth.toFixed(1)}%/an` : '',
+					data.cityData.debtData?.perHab2024 ? `dette ${Math.round(data.cityData.debtData.perHab2024)} €/hab` : '',
+					data.climateData ? 'projections climatiques DRIAS 2050-2100' : '',
+					data.cityData.city.previousResults?.['2020']?.turnout ? `participation 2020 : ${(data.cityData.city.previousResults['2020'].turnout * 100).toFixed(0)}%` : ''
+				].filter(Boolean).join(', ')}.`,
+				"url": `https://maire.app/elections/${data.electionSlug}/${data.citySlug}`,
+				"license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+				"creator": { "@type": "Organization", "name": "MagLab Studio", "url": "https://maire.app" },
+				"spatialCoverage": {
+					"@type": "Place",
+					"name": data.cityData.city.name,
+					...(data.cityData.city.lat && data.cityData.city.lon ? { "geo": { "@type": "GeoCoordinates", "latitude": data.cityData.city.lat, "longitude": data.cityData.city.lon } } : {}),
+					"containedInPlace": { "@type": "AdministrativeArea", "name": data.cityData.city.department }
+				},
+				"variableMeasured": [
+					...(data.cityData.baselineStats?.medianIncome ? [{ "@type": "PropertyValue", "name": "Revenu médian", "value": data.cityData.baselineStats.medianIncome, "unitText": "€/an" }] : []),
+					...(data.cityData.baselineStats?.popGrowth != null ? [{ "@type": "PropertyValue", "name": "Croissance démographique", "value": data.cityData.baselineStats.popGrowth, "unitText": "%/an" }] : []),
+					...(data.cityData.debtData?.perHabDelta != null ? [{ "@type": "PropertyValue", "name": "Évolution dette par habitant 2019-2024", "value": data.cityData.debtData.perHabDelta, "unitText": "€/hab" }] : []),
+					...(data.cityData.city.previousResults?.['2020']?.turnout ? [{ "@type": "PropertyValue", "name": "Participation municipales 2020", "value": (data.cityData.city.previousResults['2020'].turnout * 100).toFixed(1), "unitText": "%" }] : [])
+				],
+				"keywords": `statistiques ${data.cityData.city.name}, INSEE, finances municipales, climat, participation électorale, ${data.cityData.city.department}`
+			})}</script>`}
+		{/if}
 		{#if !isPastElection}
 			{@html `<script type="application/ld+json">${JSON.stringify({
 				"@context": "https://schema.org",
 				"@type": "Article",
 				"headline": `Candidats municipales 2026 à ${data.cityData.city.name}`,
+				"description": `Découvrez les ${data.cityData.city.listsCount || 0} listes et candidats aux élections municipales 2026 à ${data.cityData.city.name}. Programmes, statistiques, finances et projections climatiques.`,
+				"image": "https://maire.app/og-default.png",
 				"datePublished": data.cityData._metadata?.generatedAt?.split('T')[0] || "2025-12-01",
 				"dateModified": data.cityData.lastUpdated?.split('T')[0] || data.cityData._metadata?.generatedAt?.split('T')[0] || "2025-12-01",
 				"author": { "@type": "Organization", "name": "MagLab Studio", "url": "https://github.com/MagLabAI" },
@@ -853,6 +906,7 @@
 					</div>
 				</div>
 
+				<div class="hero-right">
 				{#if data.cityData.city.incumbent}
 					{#if data.cityData.incumbentAnalysis?.mandateAssessment}
 						<a href="#bilan-section" class="incumbent-pill incumbent-pill-link" onclick={(e) => { e.preventDefault(); navToSection('bilan-section'); }}>
@@ -868,6 +922,21 @@
 						</div>
 					{/if}
 				{/if}
+				{#if data.cityData.city.officialWebsite}
+					<a href={data.cityData.city.officialWebsite} target="_blank" rel="noopener" class="mairie-link">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+							<polyline points="9 22 9 12 15 12 15 22" />
+						</svg>
+						Mairie de {data.cityData.city.name}
+						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+							<polyline points="15 3 21 3 21 9" />
+							<line x1="10" y1="14" x2="21" y2="3" />
+						</svg>
+					</a>
+				{/if}
+				</div>
 			</div>
 		</header>
 
@@ -3304,6 +3373,39 @@
 
 	.incumbent-pill-link:hover {
 		border-color: var(--color-gold);
+	}
+
+	.hero-right {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.4rem;
+	}
+
+	.mairie-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.25rem 0.6rem;
+		border: 1px solid rgba(250, 248, 245, 0.3);
+		border-radius: var(--radius-sm);
+		font-size: 0.65rem;
+		font-weight: 500;
+		color: rgba(250, 248, 245, 0.8);
+		text-decoration: none;
+		transition: border-color 0.15s, color 0.15s;
+	}
+
+	.mairie-link:hover {
+		border-color: var(--color-gold);
+		color: var(--color-gold);
+	}
+
+	@media (min-width: 640px) {
+		.mairie-link {
+			font-size: 0.75rem;
+			padding: 0.3rem 0.75rem;
+		}
 	}
 
 	/* Participation Strip */

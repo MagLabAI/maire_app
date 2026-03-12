@@ -148,12 +148,12 @@
 	{#if data.election}
 		{@const isUpcoming = data.election.slug.includes('2026')}
 		{@const hubDesc = isUpcoming
-			? `Élections municipales 2026 : comparez les candidats et programmes dans ${data.cities.length.toLocaleString('fr-FR')} communes. Listes officielles, profils, enjeux locaux.`
-			: `Résultats des ${data.election.name}. ${data.cities.length} villes couvertes.`}
-		<title>{data.election.name} — candidats et programmes | maire.app</title>
+			? `Élections municipales 2026 : comparez les candidats et programmes dans ${data.cities.length.toLocaleString('fr-FR')} communes. Listes officielles, statistiques INSEE, finances municipales, projections climatiques et participation.`
+			: `Résultats des ${data.election.name}. ${data.cities.length} villes couvertes — participation, élus, composition des conseils municipaux.`}
+		<title>{data.election.name} — candidats, programmes et statistiques | maire.app</title>
 		<meta name="description" content={hubDesc} />
 		<SeoMeta
-			title="{data.election.name} — candidats et programmes | maire.app"
+			title="{data.election.name} — candidats, programmes et statistiques | maire.app"
 			description={hubDesc}
 			path="/elections/{data.election.slug}"
 		/>

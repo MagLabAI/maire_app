@@ -56,6 +56,7 @@ export interface City {
 	lon?: number;
 	incumbent?: IncumbentInfo;
 	mayorChange?: MayorChange;
+	officialWebsite?: string;
 	listsCount: number;
 	candidatesCount: number;
 }
