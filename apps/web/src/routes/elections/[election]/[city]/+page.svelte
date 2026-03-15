@@ -458,7 +458,7 @@
 				},
 				"organizer": { "@type": "GovernmentOrganization", "name": "Ministère de l'Intérieur", "url": "https://www.interieur.gouv.fr" },
 				"performer": { "@type": "GovernmentOrganization", "name": `Mairie de ${data.cityData.city.name}` },
-				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock", "url": `https://maire.app/elections/${data.electionSlug}/${data.citySlug}` }
+				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock", "validFrom": isPastElection ? "2020-01-01" : "2025-09-01", "url": `https://maire.app/elections/${data.electionSlug}/${data.citySlug}` }
 			}
 		})}</script>`}
 		{#if data.cityData.city.officialWebsite}
