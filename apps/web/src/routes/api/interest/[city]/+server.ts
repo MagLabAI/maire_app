@@ -3,6 +3,7 @@
  * =========================
  * Tracks user interest in cities without candidate data.
  * Increments a D1 counter per city slug. No auth, no cookies.
+ * Rate limiting via D1 (no KV writes — avoids free tier limits).
  *
  * POST /api/interest/[city]
  * - 204: Interest recorded
@@ -23,27 +24,33 @@ export const POST: RequestHandler = async ({ params, platform, request }) => {
 		return new Response(null, { status: 503 });
 	}
 
-	// Simple IP-based rate limiting via KV (1 interest per city per IP per hour)
-	const kv = platform?.env?.CITY_DATA;
+	// Rate limiting via D1 — deduplicate by city+IP, ignore repeats within 1h
 	const ip = request.headers.get('cf-connecting-ip') || 'unknown';
-	const rateKey = `interest-rate:${city}:${ip}`;
+	const ipHash = ip.slice(-8);
+	const recent = await db.prepare(
+		`SELECT 1 FROM city_interest_log
+		 WHERE city_slug = ?1 AND ip_hash = ?2 AND created_at > datetime('now', '-1 hour')
+		 LIMIT 1`
+	).bind(city, ipHash).first();
 
-	if (kv) {
-		const existing = await kv.get(rateKey);
-		if (existing) {
-			return new Response(null, { status: 429 });
-		}
-		await kv.put(rateKey, '1', { expirationTtl: 3600 });
+	if (recent) {
+		return new Response(null, { status: 429 });
 	}
 
-	// Upsert counter in D1
-	await db.prepare(
-		`INSERT INTO city_interest (city_slug, count, last_at)
-		 VALUES (?1, 1, datetime('now'))
-		 ON CONFLICT(city_slug) DO UPDATE SET
-		   count = count + 1,
-		   last_at = datetime('now')`
-	).bind(city).run();
+	// Log this interest event + upsert the counter
+	await db.batch([
+		db.prepare(
+			`INSERT INTO city_interest_log (city_slug, ip_hash, created_at)
+			 VALUES (?1, ?2, datetime('now'))`
+		).bind(city, ipHash),
+		db.prepare(
+			`INSERT INTO city_interest (city_slug, count, last_at)
+			 VALUES (?1, 1, datetime('now'))
+			 ON CONFLICT(city_slug) DO UPDATE SET
+			   count = count + 1,
+			   last_at = datetime('now')`
+		).bind(city)
+	]);
 
 	return new Response(null, { status: 204 });
 };

@@ -33,17 +33,13 @@ function slugify(text: string): string {
 		.replace(/^-+|-+$/g, '');
 }
 
-async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
-	const key = `rate:queue:${ip}`;
-	const current = await kv.get(key);
-	const count = current ? parseInt(current) : 0;
-
-	if (count >= RATE_LIMIT_PER_HOUR) {
-		return false;
-	}
-
-	await kv.put(key, String(count + 1), { expirationTtl: 3600 });
-	return true;
+async function checkRateLimit(db: D1Database, ip: string): Promise<boolean> {
+	const ipHash = ip.slice(-8);
+	const result = await db.prepare(
+		`SELECT COUNT(*) as cnt FROM research_queue
+		 WHERE requester_ip = ?1 AND requested_at > datetime('now', '-1 hour')`
+	).bind(ipHash).first<{ cnt: number }>();
+	return (result?.cnt ?? 0) < RATE_LIMIT_PER_HOUR;
 }
 
 async function getQueuePosition(db: D1Database, citySlug: string): Promise<number | null> {
@@ -161,7 +157,7 @@ export const GET: RequestHandler = async ({ params, platform, fetch, request, ur
 
 		// 5. Rate limit check before adding to queue
 		const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
-		if (kv && !(await checkRateLimit(kv, clientIP))) {
+		if (!(await checkRateLimit(db, clientIP))) {
 			throw error(429, 'Trop de demandes. Réessayez dans une heure.');
 		}
 
