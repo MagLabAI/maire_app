@@ -52,6 +52,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
 			debtData: (cityData as any).debtData ?? null,
 			incumbentAnalysis: cityData.incumbentAnalysis ?? null,
 			previousElection: cityData.city.previousMunicipalElection ?? null,
+			electionResults: cityData.results ?? null,
+			previousResults: cityData.city.previousResults ?? null,
 			sources: cityData._sources ?? [],
 			verification: cityData._verification ?? null,
 			breadcrumbInfo: {
@@ -74,6 +76,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
 			debtData: null,
 			incumbentAnalysis: null,
 			previousElection: null,
+			electionResults: null,
+			previousResults: null,
 			sources: [],
 			verification: null,
 			breadcrumbInfo: null

@@ -310,7 +310,10 @@ export interface RoundResult {
 	date: string;
 	turnout: number;
 	registeredVoters: number;
+	voters?: number;
+	validVotes?: number;
 	abstention: number;
+	abstentionCount?: number;
 	blankVotes?: number;
 	nullVotes?: number;
 }

@@ -125,6 +125,36 @@
 
 	let hasCitations = $derived((data.sources?.length ?? 0) > 0);
 
+	// Round 1 results
+	let electionResults = $derived(data.electionResults);
+	let hasResults = $derived(
+		electionResults?.status === 'round1-results' ||
+		electionResults?.status === 'between-rounds' ||
+		electionResults?.status === 'round2-results' ||
+		electionResults?.status === 'final'
+	);
+	let round1Info = $derived(electionResults?.round1?.info);
+	let round1Lists = $derived(electionResults?.round1?.lists || []);
+
+	// Lookup: candidate name → result
+	function getResultForCandidate(candidate: ComparisonCandidate) {
+		if (!round1Lists.length) return null;
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-''`]/g, ' ').replace(/\s+/g, ' ').trim();
+		const full = norm(`${candidate.firstName} ${candidate.lastName}`);
+		for (const rl of round1Lists) {
+			if (norm(rl.headCandidate) === full) return rl;
+		}
+		// Try reversed or last name only
+		const lastUp = norm(candidate.lastName);
+		for (const rl of round1Lists) {
+			const n = norm(rl.headCandidate);
+			if (n.includes(lastUp) || lastUp.includes(n.split(' ').pop() || '')) return rl;
+		}
+		return null;
+	}
+
+	let turnout2020 = $derived(data.previousResults?.['2020']?.turnout);
+
 	// Map candidate id → index in top-level candidates array (matches citation paths)
 	function getCandidateIndex(candidateId: string): number {
 		if (!data.candidates) return -1;
@@ -201,7 +231,8 @@
 				{#each comparison.candidates as candidate (candidate.id)}
 					{@const list = getList(candidate.listId)}
 					{@const isCrossCity = isMultiCity && candidate.citySlug !== currentCitySlug}
-					<div class="candidate-chip" class:cross-city={isCrossCity}>
+					{@const chipResult = getResultForCandidate(candidate)}
+					<div class="candidate-chip" class:cross-city={isCrossCity} class:cmp-qualified={hasResults && chipResult?.qualified} class:cmp-eliminated={hasResults && chipResult && !chipResult.qualified}>
 						<div class="chip-avatar">
 							{#if candidate.photo}
 								<img src={wikiThumb(candidate.photo)} alt={candidate.fullName} />
@@ -238,6 +269,64 @@
 		<div class="container-app">
 			<div class="topics-list">
 
+				<!-- Topic: Résultats du 1er tour -->
+				{#if hasResults && round1Lists.length > 0}
+					<details class="topic-section results-section" open>
+						<summary class="topic-title">Résultats du 1er tour</summary>
+						<div class="topic-content">
+							<!-- Turnout summary -->
+							{#if round1Info}
+								<div class="results-turnout-bar" style="grid-column: 1 / -1;">
+									<div class="turnout-summary">
+										<span class="turnout-main">{(round1Info.turnout * 100).toFixed(1)}% de participation</span>
+										{#if turnout2020}
+											{@const delta = round1Info.turnout - turnout2020}
+											<span class="turnout-delta-cmp" class:positive={delta > 0} class:negative={delta < 0}>
+												({delta > 0 ? '+' : ''}{(delta * 100).toFixed(1)} pts vs 2020)
+											</span>
+										{/if}
+										<span class="turnout-detail">
+											{round1Info.registeredVoters.toLocaleString('fr-FR')} inscrits
+											{#if round1Info.blankVotes} · {round1Info.blankVotes.toLocaleString('fr-FR')} blancs{/if}
+											{#if round1Info.nullVotes} · {round1Info.nullVotes.toLocaleString('fr-FR')} nuls{/if}
+										</span>
+									</div>
+								</div>
+							{/if}
+							{#each comparison.candidates as candidate (candidate.id)}
+								{@const result = getResultForCandidate(candidate)}
+								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
+								<div class="topic-entry" class:cross-city={isCross} class:result-qualified={result?.qualified} class:result-eliminated={result && !result.qualified}>
+									{@render candidateName(candidate)}
+									{#if result}
+										<div class="result-bar-row">
+											<div class="result-bar-track">
+												<div
+													class="result-bar-fill"
+													class:qualified={result.qualified}
+													style="width: {(result.voteShare / (round1Lists[0]?.voteShare || 1)) * 100}%"
+												></div>
+											</div>
+											<span class="result-pct" class:qualified={result.qualified}>{(result.voteShare * 100).toFixed(1)}%</span>
+										</div>
+										<span class="result-detail">
+											{result.votes.toLocaleString('fr-FR')} voix
+											{#if result.seats} · {result.seats} sièges{/if}
+											{#if result.qualified}
+												<span class="result-badge qualified">{electionResults?.status === 'final' ? 'Élu(e)' : '2nd tour'}</span>
+											{:else}
+												<span class="result-badge eliminated">Éliminé(e)</span>
+											{/if}
+										</span>
+									{:else}
+										<p class="entry-empty">Résultat non disponible</p>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+
 				<!-- Topic: Positionnement -->
 				{#if comparison.candidates.some((c) => c.positioning)}
 					<details class="topic-section" open>
@@ -245,8 +334,10 @@
 						<div class="topic-content">
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
-								<div class="topic-entry" class:cross-city={isCross}>
+								{@const cmpResult = getResultForCandidate(candidate)}
+								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									{@render candidateName(candidate)}
+									{#if hasResults && cmpResult}<span class="cmp-qual-badge" class:qualified={cmpResult.qualified}>{cmpResult.qualified ? '2nd tour' : 'Éliminé(e)'}</span>{/if}
 									<span class="archetype-badge archetype-{candidate.rarity}">{rarityLabel[candidate.rarity] || 'Renouveau'}</span>
 									{#if candidate.positioning}
 										<p class="entry-text">{candidate.positioning}{@render cite(candidatePath(candidate.id, 'positioning'))}</p>
@@ -267,9 +358,11 @@
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
 								{@const list = getList(candidate.listId)}
-								<div class="topic-entry" class:cross-city={isCross}>
+								{@const cmpResult = getResultForCandidate(candidate)}
+								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									<div class="entry-header">
 										{@render candidateName(candidate)}
+										{#if hasResults && cmpResult}<span class="cmp-qual-badge" class:qualified={cmpResult.qualified}>{cmpResult.qualified ? '2nd tour' : 'Éliminé(e)'}</span>{/if}
 										{#if list?.programUrl}
 											<a href={list.programUrl} target="_blank" rel="noopener noreferrer" class="entry-link">Programme complet</a>
 										{/if}
@@ -369,7 +462,8 @@
 								{#each comparison.candidates as candidate (candidate.id)}
 									{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
 									{@const program = getProgram(candidate)}
-									<div class="topic-entry" class:cross-city={isCross}>
+									{@const cmpResult = getResultForCandidate(candidate)}
+									<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 										{@render candidateName(candidate)}
 										{#if program?.[topic.key]}
 											<p class="entry-text">{program[topic.key]}{@render cite(listPath(candidate.listId, `program.${topic.key}`))}</p>
@@ -390,7 +484,8 @@
 						<div class="topic-content">
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
-								<div class="topic-entry" class:cross-city={isCross}>
+								{@const cmpResult = getResultForCandidate(candidate)}
+								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									{@render candidateName(candidate)}
 									<div class="sw-columns">
 										{#if candidate.strengths?.length}
@@ -427,7 +522,8 @@
 						<div class="topic-content">
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
-								<div class="topic-entry" class:cross-city={isCross}>
+								{@const cmpResult = getResultForCandidate(candidate)}
+								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									<div class="entry-header">
 										{@render candidateName(candidate)}
 										{#if candidate.experience}
@@ -477,7 +573,8 @@
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
 								{@const list = getList(candidate.listId)}
-								<div class="topic-entry entry-inline" class:cross-city={isCross}>
+								{@const cmpResult = getResultForCandidate(candidate)}
+								<div class="topic-entry entry-inline" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									{@render candidateName(candidate)}
 									<div class="links-row">
 										<a href={getNewsSearchUrl(candidate.fullName)} target="_blank" rel="noopener noreferrer" class="entry-link">Actualités</a>
@@ -1691,6 +1788,162 @@
 		color: var(--color-text-muted);
 		line-height: 1.5;
 		margin: 0;
+	}
+
+	/* Round 1 results section */
+	.results-section .topic-content {
+		gap: 0.75rem;
+	}
+
+	.results-turnout-bar {
+		padding: 0.75rem 1rem;
+		background: var(--color-background);
+		border-radius: 8px;
+		border: 1px solid var(--color-card-border);
+	}
+
+	.turnout-summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.75rem;
+	}
+
+	.turnout-main {
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: var(--color-foreground);
+	}
+
+	.turnout-delta-cmp {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-text-light);
+	}
+
+	.turnout-delta-cmp.positive {
+		color: var(--color-success);
+	}
+
+	.turnout-delta-cmp.negative {
+		color: var(--color-coral);
+	}
+
+	.turnout-detail {
+		font-size: 0.8rem;
+		color: var(--color-text-light);
+		width: 100%;
+	}
+
+	.result-bar-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.25rem;
+	}
+
+	.result-bar-track {
+		flex: 1;
+		height: 8px;
+		background: var(--color-card-border);
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.result-bar-row .result-bar-fill {
+		height: 100%;
+		background: var(--color-text-light);
+		border-radius: 4px;
+		transition: width 0.3s ease;
+	}
+
+	.result-bar-row .result-bar-fill.qualified {
+		background: var(--color-navy-light);
+	}
+
+	.result-bar-row .result-pct {
+		min-width: 48px;
+		text-align: right;
+		font-weight: 700;
+		font-size: 0.85rem;
+		color: var(--color-text-light);
+	}
+
+	.result-bar-row .result-pct.qualified {
+		color: var(--color-navy-light);
+	}
+
+	.result-detail {
+		font-size: 0.75rem;
+		color: var(--color-text-light);
+		margin-top: 0.125rem;
+	}
+
+	.result-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		padding: 0.1em 0.4em;
+		border-radius: 3px;
+		margin-left: 0.5rem;
+		vertical-align: middle;
+	}
+
+	.result-badge.qualified {
+		background: color-mix(in srgb, var(--color-navy-light) 15%, transparent);
+		color: var(--color-navy-light);
+	}
+
+	.result-badge.eliminated {
+		background: color-mix(in srgb, var(--color-coral) 15%, transparent);
+		color: var(--color-coral);
+	}
+
+	.topic-entry.result-eliminated {
+		opacity: 0.6;
+	}
+
+	/* Qualified/eliminated visual cue across all sections */
+	.topic-entry.cmp-qualified {
+		border-left-color: #047857;
+	}
+
+	.topic-entry.cmp-eliminated {
+		border-left-color: var(--color-text-muted);
+		opacity: 0.65;
+	}
+
+	.topic-entry.cmp-eliminated:hover {
+		opacity: 0.9;
+	}
+
+	.candidate-chip.cmp-qualified {
+		border: 2px solid #047857;
+	}
+
+	.candidate-chip.cmp-eliminated {
+		opacity: 0.55;
+	}
+
+	.cmp-qual-badge {
+		display: inline-block;
+		font-size: 0.55rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		padding: 0.1em 0.4em;
+		border-radius: 3px;
+		vertical-align: middle;
+		margin-left: 0.35rem;
+		background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
+		color: var(--color-text-muted);
+	}
+
+	.cmp-qual-badge.qualified {
+		background: color-mix(in srgb, #047857 15%, transparent);
+		color: #047857;
 	}
 
 	/* Actions */

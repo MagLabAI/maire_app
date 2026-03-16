@@ -17,7 +17,7 @@
 		strokeColor
 	} from '$lib/map/shared';
 
-	type LayerKey = 'participation' | 'participation2014' | 'participation2008' | 'growth' | 'temperature' | 'temperature100' | 'debt' | 'income';
+	type LayerKey = 'participation2026' | 'participation' | 'participation2014' | 'participation2008' | 'growth' | 'temperature' | 'temperature100' | 'debt' | 'income';
 
 	interface LayerConfig {
 		key: LayerKey;
@@ -34,6 +34,31 @@
 	}
 
 	const LAYERS: LayerConfig[] = [
+		{
+			key: 'participation2026',
+			label: 'Participation 2026 (T1)',
+			shortLabel: 'Particip. 2026',
+			prop: 't26',
+			unit: '%',
+			colorExpr: [
+				'case', ['has', 't26'],
+				['interpolate', ['linear'], ['get', 't26'],
+					0.25, '#fef3c7', 0.40, '#fcd34d', 0.55, '#e8a020', 0.70, '#c2410c', 0.85, '#7c2d12'
+				],
+				'#d0d0d0'
+			],
+			legendStops: [
+				{ value: '25%', color: '#fef3c7' },
+				{ value: '40%', color: '#fcd34d' },
+				{ value: '55%', color: '#e8a020' },
+				{ value: '70%', color: '#c2410c' },
+				{ value: '85%', color: '#7c2d12' }
+			],
+			thresholds: [0.45, 0.60],
+			formatValue: (v: number) => `${Math.round(v * 100)}%`,
+			axisLabels: ['Faible', 'Forte'],
+			rangeLabels: ['25%', '85%']
+		},
 		{
 			key: 'participation',
 			label: 'Participation 2020',
@@ -230,6 +255,22 @@
 	// Hand-tuned bivariate palettes for specific pairs
 	// palette[row][col]: row=layerA low→high (bottom→top), col=layerB low→high (left→right)
 	const MANUAL_PALETTES: Record<string, string[][]> = {
+		// 2026 vs other participation: green = improved, coral = declined
+		'participation-participation2026': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		'participation2014-participation2026': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		'participation2008-participation2026': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
 		// Cross-election participation: green = improved, coral = declined, diagonal = stable
 		'participation-participation2014': [
 			['#fef3c7', '#e8b878', '#d06848'],
@@ -246,7 +287,33 @@
 			['#98c498', '#c0a868', '#b06838'],
 			['#38884a', '#887828', '#7c2d12']
 		],
-		// New participation layers × existing layers (reuse existing palette patterns)
+		// participation2026 × non-participation layers (same palettes as participation 2020)
+		'debt-participation2026': [
+			['#f5d0a8', '#d4a060', '#a87030'],
+			['#e8c8c0', '#c09060', '#906828'],
+			['#d88888', '#b05050', '#882828']
+		],
+		'growth-participation2026': [
+			['#dab0a0', '#c07858', '#983828'],
+			['#d8d0a0', '#b0a058', '#887020'],
+			['#a0c8a0', '#589848', '#306828']
+		],
+		'income-participation2026': [
+			['#5040a0', '#7a5090', '#a04828'],
+			['#9080c0', '#b08868', '#a86838'],
+			['#60c0a0', '#68a858', '#788828']
+		],
+		'participation2026-temperature': [
+			['#b0c8e8', '#d0b898', '#c09088'],
+			['#6890b8', '#c09060', '#c06050'],
+			['#4a3818', '#a85828', '#a01818']
+		],
+		'participation2026-temperature100': [
+			['#b0c8e8', '#d0b898', '#c09088'],
+			['#6890b8', '#c09060', '#c06050'],
+			['#4a3818', '#a85828', '#a01818']
+		],
+		// Existing: participation layers × existing layers
 		'debt-participation2014': [
 			['#f5d0a8', '#d4a060', '#a87030'],
 			['#e8c8c0', '#c09060', '#906828'],
@@ -383,6 +450,14 @@
 
 	// Descriptive analysis text for each bivariate pair
 	const CORRELATION_INSIGHTS: Record<string, string> = {
+		'participation-participation2026': 'Évolution de la participation entre 2020 et 2026 (1er tour). Vert = participation en hausse, corail = en baisse.',
+		'participation2014-participation2026': 'Évolution de la participation entre 2014 et 2026 (1er tour). Tendance sur 12 ans.',
+		'participation2008-participation2026': 'Évolution de la participation entre 2008 et 2026 (1er tour). Tendance sur 18 ans.',
+		'debt-participation2026': 'Les villes où la dette/hab a le plus augmenté mobilisent-elles davantage leurs électeurs en 2026 ?',
+		'growth-participation2026': 'Les villes en croissance votent-elles moins en 2026 ? Dynamique démographique et engagement civique.',
+		'income-participation2026': 'Revenus et participation 2026 : les villes aisées participent-elles plus au scrutin ?',
+		'participation2026-temperature': 'Le climat influence-t-il le vote local en 2026 ? Nord vs Midi.',
+		'participation2026-temperature100': 'En 2100, les zones les plus chaudes voteront-elles moins ? Participation 2026 × projections climatiques.',
 		'participation-participation2014': 'Évolution de la participation entre 2014 et 2020. Vert = participation en hausse, corail = en baisse. La diagonale montre les villes stables.',
 		'participation-participation2008': 'Évolution de la participation entre 2008 et 2020. Vert = participation en hausse, corail = en baisse. Tendance sur 12 ans.',
 		'participation2008-participation2014': 'Évolution de la participation entre 2008 et 2014. Vert = participation en hausse, corail = en baisse.',
@@ -438,7 +513,7 @@
 	let popup: maplibregl.Popup | null = null;
 	let dataLoaded = $state(false);
 	let dark = $state(browser && document.documentElement.classList.contains('dark'));
-	let activeLayers = $state<LayerKey[]>(['participation']);
+	let activeLayers = $state<LayerKey[]>(['participation2026']);
 	let panelOpen = $state(true);
 	let mobileLegendOpen = $state(false);
 
@@ -453,7 +528,7 @@
 		const idx = activeLayers.indexOf(key);
 		if (idx !== -1) {
 			const next = activeLayers.filter(k => k !== key);
-			activeLayers = next.length === 0 ? ['participation'] : next;
+			activeLayers = next.length === 0 ? ['participation2026'] : next;
 		} else if (activeLayers.length < 2) {
 			activeLayers = [...activeLayers, key];
 		} else {
@@ -587,7 +662,7 @@
 			dataLoaded = true;
 
 			map.addSource('cities', { type: 'geojson', data: geojson });
-			addCityCircleLayer(map, getLayerConfig('participation').colorExpr, dark);
+			addCityCircleLayer(map, getLayerConfig('participation2026').colorExpr, dark);
 			addCityLabelLayer(map, dark);
 
 			setupCityInteraction(
@@ -658,10 +733,20 @@
 	function buildPopupHTML(f: Record<string, unknown>): string {
 		const popText = Number(f.p).toLocaleString('fr-FR');
 		let dataRows = '';
-		// Participation block: 2020 + 2014 + 2008 with evolution arrows
+		// Participation block: 2026 + 2020 + 2014 + 2008 with evolution arrows
+		const t26 = f.t26 ? Number(f.t26) : null;
 		const t20 = f.t ? Number(f.t) : null;
 		const t14 = f.t14 ? Number(f.t14) : null;
 		const t08 = f.t08 ? Number(f.t08) : null;
+		if (t26 !== null) {
+			const c26 = lerpColor(t26, participationStops);
+			let delta = '';
+			if (t20 !== null) {
+				const diff = Math.round((t26 - t20) * 100);
+				delta = diff > 0 ? ` <span style="color:#4a9d6e;font-size:0.6rem">+${diff}pts</span>` : ` <span style="color:#e07a5f;font-size:0.6rem">${diff}pts</span>`;
+			}
+			dataRows += `<div class="popup-row"><span class="popup-label"><b>Participation 2026</b></span><span class="popup-value"><span style="color:${c26}">${Math.round(t26 * 100)}%</span>${delta}</span></div>`;
+		}
 		if (t20 !== null) {
 			const c20 = lerpColor(t20, participationStops);
 			dataRows += `<div class="popup-row"><span class="popup-label">Participation 2020</span><span class="popup-value" style="color:${c20}">${Math.round(t20 * 100)}%</span></div>`;
@@ -841,7 +926,7 @@
 									{/each}
 								</div>
 							</div>
-							{#if layer.key === 'participation' || layer.key === 'participation2014' || layer.key === 'participation2008'}
+							{#if layer.key === 'participation2026' || layer.key === 'participation' || layer.key === 'participation2014' || layer.key === 'participation2008'}
 								<p class="legend-hint">Taux de participation aux élections municipales. Combinez deux années (cochez) pour visualiser l'évolution : <span style="color:#38884a">vert</span> = hausse, <span style="color:#d06848">corail</span> = baisse.</p>
 							{/if}
 						</div>
@@ -997,7 +1082,7 @@
 
 					{#if activeLayers.length === 2 && getCorrelationInsight(activeLayerConfigs[0].key, activeLayerConfigs[1].key)}
 						<p class="mobile-insight">{getCorrelationInsight(activeLayerConfigs[0].key, activeLayerConfigs[1].key)}</p>
-					{:else if activeLayers.length === 1 && (activeLayers[0] === 'participation' || activeLayers[0] === 'participation2014' || activeLayers[0] === 'participation2008')}
+					{:else if activeLayers.length === 1 && (activeLayers[0] === 'participation2026' || activeLayers[0] === 'participation' || activeLayers[0] === 'participation2014' || activeLayers[0] === 'participation2008')}
 						<p class="mobile-insight">Combinez 2 années de participation pour voir l'évolution : vert = hausse, corail = baisse.</p>
 					{/if}
 				</div>

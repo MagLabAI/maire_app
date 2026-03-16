@@ -13,7 +13,7 @@
 	let { data }: { data: PageData } = $props();
 
 	let featuredElection = $derived(data.elections.find((e) => e.id === data.featuredElection));
-	let electionDate = $derived(featuredElection?.dates.round1 || '2026-03-15');
+	let electionDate = $derived(featuredElection?.dates.round2 || '2026-03-22');
 
 	const popularCities = [
 		{ name: 'Paris', slug: 'paris' },
@@ -179,7 +179,7 @@
 			</div>
 
 			<div class="hero-countdown">
-				<CountdownTimer targetDate={electionDate} label="1er tour" />
+				<CountdownTimer targetDate={electionDate} label="2nd tour" />
 			</div>
 
 			<!-- Geolocation suggestion -->
