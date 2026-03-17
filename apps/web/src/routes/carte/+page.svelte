@@ -17,7 +17,7 @@
 		strokeColor
 	} from '$lib/map/shared';
 
-	type LayerKey = 'participation2026' | 'participation' | 'participation2014' | 'participation2008' | 'growth' | 'temperature' | 'temperature100' | 'debt' | 'income';
+	type LayerKey = 'qualifies' | 'participation2026' | 'participation' | 'participation2014' | 'participation2008' | 'growth' | 'temperature' | 'temperature100' | 'debt' | 'income';
 
 	interface LayerConfig {
 		key: LayerKey;
@@ -58,6 +58,34 @@
 			formatValue: (v: number) => `${Math.round(v * 100)}%`,
 			axisLabels: ['Faible', 'Forte'],
 			rangeLabels: ['25%', '85%']
+		},
+		{
+			key: 'qualifies',
+			label: 'Candidats 2nd tour 2026',
+			shortLabel: 'Qualifiés T2',
+			prop: 'q',
+			unit: '',
+			colorExpr: [
+				'case',
+				['==', ['get', 'q'], 0], '#d0d0d0',
+				['has', 'q'],
+				['interpolate', ['linear'], ['get', 'q'],
+					2, '#fef3c7', 3, '#fcd34d', 4, '#e8a020', 5, '#c2410c', 7, '#7c2d12'
+				],
+				'#d0d0d0'
+			],
+			legendStops: [
+				{ value: '0', color: '#d0d0d0' },
+				{ value: '2', color: '#fef3c7' },
+				{ value: '3', color: '#fcd34d' },
+				{ value: '4', color: '#e8a020' },
+				{ value: '5', color: '#c2410c' },
+				{ value: '7', color: '#7c2d12' }
+			],
+			thresholds: [3, 4],
+			formatValue: (v: number) => v === 0 ? 'Élu T1' : `${v}`,
+			axisLabels: ['Peu', 'Beaucoup'],
+			rangeLabels: ['0', '7']
 		},
 		{
 			key: 'participation',
@@ -136,7 +164,7 @@
 		},
 		{
 			key: 'growth',
-			label: 'Evolution population',
+			label: 'Évolution population',
 			shortLabel: 'Croissance',
 			prop: 'g',
 			unit: '%/an',
@@ -159,7 +187,7 @@
 		},
 		{
 			key: 'temperature',
-			label: 'Temperature 2050',
+			label: 'Température 2050',
 			shortLabel: 'Temp. 2050',
 			prop: 'tm',
 			unit: '°C',
@@ -182,7 +210,7 @@
 		},
 		{
 			key: 'temperature100',
-			label: 'Temperature 2100',
+			label: 'Température 2100',
 			shortLabel: 'Temp. 2100',
 			prop: 'tm1',
 			unit: '°C',
@@ -229,7 +257,7 @@
 		},
 		{
 			key: 'income',
-			label: 'Revenu median',
+			label: 'Revenu médian',
 			shortLabel: 'Revenu',
 			prop: 'mi',
 			unit: 'EUR',
@@ -286,6 +314,53 @@
 			['#fef3c7', '#e8b878', '#d06848'],
 			['#98c498', '#c0a868', '#b06838'],
 			['#38884a', '#887828', '#7c2d12']
+		],
+		// qualifiés × participation layers (same palette as participation cross-layers)
+		'participation-qualifies': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		'participation2026-qualifies': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		'participation2014-qualifies': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		'participation2008-qualifies': [
+			['#fef3c7', '#e8b878', '#d06848'],
+			['#98c498', '#c0a868', '#b06838'],
+			['#38884a', '#887828', '#7c2d12']
+		],
+		// qualifiés × non-participation layers (same palettes as participation 2020)
+		'debt-qualifies': [
+			['#f5d0a8', '#d4a060', '#a87030'],
+			['#e8c8c0', '#c09060', '#906828'],
+			['#d88888', '#b05050', '#882828']
+		],
+		'growth-qualifies': [
+			['#dab0a0', '#c07858', '#983828'],
+			['#d8d0a0', '#b0a058', '#887020'],
+			['#a0c8a0', '#589848', '#306828']
+		],
+		'income-qualifies': [
+			['#5040a0', '#7a5090', '#a04828'],
+			['#9080c0', '#b08868', '#a86838'],
+			['#60c0a0', '#68a858', '#788828']
+		],
+		'qualifies-temperature': [
+			['#b0c8e8', '#d0b898', '#c09088'],
+			['#6890b8', '#c09060', '#c06050'],
+			['#4a3818', '#a85828', '#a01818']
+		],
+		'qualifies-temperature100': [
+			['#b0c8e8', '#d0b898', '#c09088'],
+			['#6890b8', '#c09060', '#c06050'],
+			['#4a3818', '#a85828', '#a01818']
 		],
 		// participation2026 × non-participation layers (same palettes as participation 2020)
 		'debt-participation2026': [
@@ -450,6 +525,15 @@
 
 	// Descriptive analysis text for each bivariate pair
 	const CORRELATION_INSIGHTS: Record<string, string> = {
+		'participation-qualifies': 'Participation 2020 et nombre de candidats au 2nd tour. Les villes à forte abstention ont-elles moins de choix ?',
+		'participation2026-qualifies': 'Participation 2026 et compétitivité du 2nd tour. Plus de candidats = plus d\'enjeu = plus de votants ?',
+		'participation2014-qualifies': 'Participation 2014 et nombre de qualifiés 2026 : les villes historiquement mobilisées attirent-elles plus de candidats ?',
+		'participation2008-qualifies': 'Participation 2008 et nombre de qualifiés 2026 : tendance longue.',
+		'debt-qualifies': 'Dette et compétitivité électorale : les villes endettées attirent-elles plus de candidats challengers ?',
+		'growth-qualifies': 'Croissance démographique et nombre de qualifiés : les villes dynamiques sont-elles plus disputées ?',
+		'income-qualifies': 'Revenus et compétitivité : les villes aisées attirent-elles plus de candidats au 2nd tour ?',
+		'qualifies-temperature': 'Climat et compétitivité électorale : plus de candidats au sud ou au nord ?',
+		'qualifies-temperature100': 'Projections 2100 et compétitivité : les zones menacées par le réchauffement sont-elles plus disputées ?',
 		'participation-participation2026': 'Évolution de la participation entre 2020 et 2026 (1er tour). Vert = participation en hausse, corail = en baisse.',
 		'participation2014-participation2026': 'Évolution de la participation entre 2014 et 2026 (1er tour). Tendance sur 12 ans.',
 		'participation2008-participation2026': 'Évolution de la participation entre 2008 et 2026 (1er tour). Tendance sur 18 ans.',
@@ -928,6 +1012,8 @@
 							</div>
 							{#if layer.key === 'participation2026' || layer.key === 'participation' || layer.key === 'participation2014' || layer.key === 'participation2008'}
 								<p class="legend-hint">Taux de participation aux élections municipales. Combinez deux années (cochez) pour visualiser l'évolution : <span style="color:#38884a">vert</span> = hausse, <span style="color:#d06848">corail</span> = baisse.</p>
+							{:else if layer.key === 'qualifies'}
+								<p class="legend-hint">Nombre de listes qualifiées pour le 2nd tour. Gris = élu au 1er tour. Combinez avec la participation pour croiser les données.</p>
 							{/if}
 						</div>
 					{:else}
