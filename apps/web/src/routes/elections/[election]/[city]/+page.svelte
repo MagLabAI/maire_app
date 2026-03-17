@@ -328,8 +328,9 @@
 	// IDs of stub candidates for quick lookup
 	let stubIds = $derived(new Set(missingOfficialHeads().map(c => c.id)));
 
-	// "Comparer tous" button state
+	// "Comparer tous" / "Comparer qualifiés" button state
 	let allCompared = $state(false);
+	let qualifiedCompared = $state(false);
 
 	// Cross-reference: collect head candidate names from previous elections for matching
 	let candidates2020Names = $derived(() => {
@@ -1318,6 +1319,31 @@
 								</div>
 							{/each}
 						</div>
+
+						{#if !isElectedRound1 && qualifiedCandidates().length >= 2}
+							<div class="compare-qualified-wrap">
+								<button
+									class="compare-all-btn compare-qualified-btn"
+									disabled={qualifiedCompared}
+									onclick={() => {
+										comparison.addAll(qualifiedCandidates(), data.cityData.city.slug, data.cityData.city.name);
+										qualifiedCompared = true;
+									}}
+								>
+									{#if qualifiedCompared}
+										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+										</svg>
+										{qualifiedCandidates().length} qualifiés ajoutés
+									{:else}
+										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+										</svg>
+										Comparer les qualifiés ({qualifiedCandidates().length})
+									{/if}
+								</button>
+							</div>
+						{/if}
 
 						<!-- Eliminated candidates -->
 						{#if eliminatedCandidates().length > 0}
@@ -3574,24 +3600,34 @@
 	}
 
 	.vote-badge {
+		position: relative;
+		z-index: 0;
 		text-align: center;
-		padding: 0.35rem 0.5rem;
-		border-radius: 0.5rem 0.5rem 0 0;
+		padding: 0.5rem 0.75rem 1.8rem;
+		margin-bottom: -1.4rem;
+		border-radius: 0.75rem 0.75rem 0 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.15rem;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
 	}
 
 	.vote-badge.qualified {
-		background: linear-gradient(135deg, #065f46, #047857);
+		background: #047857;
 		color: #ecfdf5;
+		box-shadow: 0 1px 0 rgba(110, 231, 183, 0.2) inset, 0 2px 8px rgba(4, 120, 87, 0.3);
+	}
+
+	:global([data-theme="dark"]) .vote-badge.qualified {
+		background: rgba(4, 120, 87, 0.85);
 	}
 
 	.vote-badge.eliminated {
-		background: var(--color-text-muted);
+		background: color-mix(in srgb, var(--color-text-muted) 75%, transparent);
 		color: var(--color-cream);
-		opacity: 0.7;
+		box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
 	}
 
 	.vote-badge-bar {
@@ -4483,6 +4519,27 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.25rem;
+	}
+
+	.compare-qualified-wrap {
+		display: flex;
+		justify-content: center;
+		margin-top: 0.75rem;
+	}
+
+	.compare-qualified-btn {
+		border-color: #047857 !important;
+		color: #047857 !important;
+	}
+	.compare-qualified-btn:hover:not(:disabled) {
+		background: #047857 !important;
+		color: #ecfdf5 !important;
+	}
+	.compare-qualified-btn:disabled {
+		color: var(--color-success) !important;
+		border-color: var(--color-success) !important;
+		opacity: 0.8;
+		cursor: default;
 	}
 
 	/* Compare all button */

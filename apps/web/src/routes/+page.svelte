@@ -174,8 +174,8 @@
 
 			<!-- Participation callout — visible early on mobile -->
 			<div class="participation-inline">
-				<span class="participation-inline-stat">44%</span>
-				<span class="participation-inline-text">de participation en 2020. Informez-vous pour 2026.</span>
+				<span class="participation-inline-stat">53%</span>
+				<span class="participation-inline-text">de participation au 1er tour <span class="participation-delta">+11pts 2020</span></span>
 			</div>
 
 			<div class="hero-countdown">
@@ -584,6 +584,11 @@
 	.participation-inline-text {
 		font-size: 0.8rem;
 		color: rgba(250, 248, 245, 0.85);
+	}
+
+	.participation-delta {
+		color: #4ade80;
+		font-weight: 700;
 	}
 
 	.hero-countdown {
