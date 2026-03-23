@@ -153,6 +153,52 @@
 		return null;
 	}
 
+	// Round 2 results
+	let round2 = $derived(electionResults?.round2);
+	let round2Info = $derived(round2?.info);
+	let round2Lists = $derived(round2?.lists || []);
+	let isElectedRound2 = $derived(electionResults?.status === 'final' && !!round2);
+	let isElectedRound1 = $derived(electionResults?.status === 'final' && !round2);
+
+	function getR2ResultForCandidate(candidate: ComparisonCandidate) {
+		if (!round2Lists.length) return null;
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-''`]/g, ' ').replace(/\s+/g, ' ').trim();
+		const full = norm(`${candidate.firstName} ${candidate.lastName}`);
+		for (const rl of round2Lists) {
+			if (norm(rl.headCandidate) === full) return rl;
+		}
+		const lastUp = norm(candidate.lastName);
+		for (const rl of round2Lists) {
+			const n = norm(rl.headCandidate);
+			if (n.includes(lastUp) || lastUp.includes(n.split(' ').pop() || '')) return rl;
+		}
+		return null;
+	}
+
+	// Badge text helpers for R1 section
+	function r1BadgeText(result: any): string {
+		if (!result) return '';
+		if (result.qualified) {
+			if (isElectedRound1) return 'Élu(e)';
+			return 'Qualifié(e)';
+		}
+		return 'Éliminé(e)';
+	}
+
+	// Badge text for cmp-qual-badge (other sections)
+	function cmpBadgeText(candidate: ComparisonCandidate): string {
+		if (isElectedRound2) {
+			const r2 = getR2ResultForCandidate(candidate);
+			if (r2) return r2.seats ? 'Élu(e)' : 'Non élu(e)';
+			const r1 = getResultForCandidate(candidate);
+			return r1?.qualified ? 'Qualifié(e)' : 'Éliminé(e)';
+		}
+		const r1 = getResultForCandidate(candidate);
+		if (!r1) return '';
+		if (isElectedRound1) return r1.qualified ? 'Élu(e)' : 'Éliminé(e)';
+		return r1.qualified ? '2nd tour' : 'Éliminé(e)';
+	}
+
 	let turnout2020 = $derived(data.previousResults?.['2020']?.turnout);
 
 	// Map candidate id → index in top-level candidates array (matches citation paths)
@@ -312,11 +358,7 @@
 										<span class="result-detail">
 											{result.votes.toLocaleString('fr-FR')} voix
 											{#if result.seats} · {result.seats} sièges{/if}
-											{#if result.qualified}
-												<span class="result-badge qualified">{electionResults?.status === 'final' ? 'Élu(e)' : '2nd tour'}</span>
-											{:else}
-												<span class="result-badge eliminated">Éliminé(e)</span>
-											{/if}
+												<span class="result-badge" class:qualified={result.qualified} class:eliminated={!result.qualified}>{r1BadgeText(result)}</span>
 										</span>
 									{:else}
 										<p class="entry-empty">Résultat non disponible</p>
@@ -327,7 +369,68 @@
 					</details>
 				{/if}
 
-				<!-- Topic: Positionnement -->
+				<!-- Topic: Résultats du 2nd tour -->
+				{#if round2 && round2Lists.length > 0}
+					<details class="topic-section results-section results-section-r2" open>
+						<summary class="topic-title">Résultats du 2nd tour</summary>
+						<div class="topic-content">
+							{#if round2Info}
+								<div class="results-turnout-bar results-turnout-r2" style="grid-column: 1 / -1;">
+									<div class="turnout-summary">
+										<span class="turnout-main">{(round2Info.turnout * 100).toFixed(1)}% de participation</span>
+										{#if round1Info}
+											{@const deltaR1 = round2Info.turnout - round1Info.turnout}
+											<span class="turnout-delta-cmp" class:positive={deltaR1 > 0} class:negative={deltaR1 < 0}>
+												({deltaR1 > 0 ? '+' : ''}{(deltaR1 * 100).toFixed(1)} pts vs T1)
+											</span>
+										{/if}
+										<span class="turnout-detail">
+											{round2Info.registeredVoters.toLocaleString('fr-FR')} inscrits
+											· {round2Info.voters?.toLocaleString('fr-FR')} votants
+											{#if round2Info.blankVotes} · {round2Info.blankVotes.toLocaleString('fr-FR')} blancs{/if}
+											{#if round2Info.nullVotes} · {round2Info.nullVotes.toLocaleString('fr-FR')} nuls{/if}
+										</span>
+									</div>
+								</div>
+							{/if}
+							{#each comparison.candidates as candidate (candidate.id)}
+								{@const r2result = getR2ResultForCandidate(candidate)}
+								{@const r1result = getResultForCandidate(candidate)}
+								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
+								<div class="topic-entry" class:cross-city={isCross} class:result-r2-elected={r2result?.seats} class:result-eliminated={r2result && !r2result.seats}>
+									{@render candidateName(candidate)}
+									{#if r2result}
+										<div class="result-bar-row">
+											<div class="result-bar-track">
+												<div
+													class="result-bar-fill"
+													class:r2-elected={!!r2result.seats}
+													style="width: {(r2result.voteShare / (round2Lists[0]?.voteShare || 1)) * 100}%"
+												></div>
+											</div>
+											<span class="result-pct" class:r2-elected={!!r2result.seats}>{(r2result.voteShare * 100).toFixed(1)}%</span>
+										</div>
+										<span class="result-detail">
+											{r2result.votes.toLocaleString('fr-FR')} voix
+											{#if r2result.seats} · {r2result.seats} sièges{/if}
+											{#if r2result.seats}
+												<span class="result-badge r2-elected">Élu(e)</span>
+											{:else}
+												<span class="result-badge eliminated">Non élu(e)</span>
+											{/if}
+										</span>
+									{:else if r1result && !r1result.qualified}
+										<p class="entry-empty">Éliminé(e) au 1er tour</p>
+									{:else}
+										<p class="entry-empty">Résultat non disponible</p>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+
+			<!-- Topic: Positionnement -->
 				{#if comparison.candidates.some((c) => c.positioning)}
 					<details class="topic-section" open>
 						<summary class="topic-title">Positionnement politique</summary>
@@ -335,9 +438,10 @@
 							{#each comparison.candidates as candidate (candidate.id)}
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
 								{@const cmpResult = getResultForCandidate(candidate)}
+								{@const cmpBadge = cmpBadgeText(candidate)}
 								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									{@render candidateName(candidate)}
-									{#if hasResults && cmpResult}<span class="cmp-qual-badge" class:qualified={cmpResult.qualified}>{cmpResult.qualified ? '2nd tour' : 'Éliminé(e)'}</span>{/if}
+									{#if hasResults && cmpBadge}<span class="cmp-qual-badge" class:qualified={cmpResult?.qualified}>{cmpBadge}</span>{/if}
 									<span class="archetype-badge archetype-{candidate.rarity}">{rarityLabel[candidate.rarity] || 'Renouveau'}</span>
 									{#if candidate.positioning}
 										<p class="entry-text">{candidate.positioning}{@render cite(candidatePath(candidate.id, 'positioning'))}</p>
@@ -359,10 +463,11 @@
 								{@const isCross = isMultiCity && candidate.citySlug !== currentCitySlug}
 								{@const list = getList(candidate.listId)}
 								{@const cmpResult = getResultForCandidate(candidate)}
+								{@const cmpBadge = cmpBadgeText(candidate)}
 								<div class="topic-entry" class:cross-city={isCross} class:cmp-qualified={hasResults && cmpResult?.qualified} class:cmp-eliminated={hasResults && cmpResult && !cmpResult.qualified}>
 									<div class="entry-header">
 										{@render candidateName(candidate)}
-										{#if hasResults && cmpResult}<span class="cmp-qual-badge" class:qualified={cmpResult.qualified}>{cmpResult.qualified ? '2nd tour' : 'Éliminé(e)'}</span>{/if}
+										{#if hasResults && cmpBadge}<span class="cmp-qual-badge" class:qualified={cmpResult?.qualified}>{cmpBadge}</span>{/if}
 										{#if list?.programUrl}
 											<a href={list.programUrl} target="_blank" rel="noopener noreferrer" class="entry-link">Programme complet</a>
 										{/if}
@@ -1944,6 +2049,36 @@
 	.cmp-qual-badge.qualified {
 		background: color-mix(in srgb, #047857 15%, transparent);
 		color: #047857;
+	}
+
+	/* Round 2 results */
+	.results-section-r2 .topic-title {
+		color: #047857;
+	}
+
+	.results-section-r2 .topic-title::before {
+		border-left-color: #047857;
+	}
+
+	.results-turnout-r2 {
+		border-color: color-mix(in srgb, #047857 30%, var(--color-card-border));
+	}
+
+	.result-bar-row .result-bar-fill.r2-elected {
+		background: #047857;
+	}
+
+	.result-bar-row .result-pct.r2-elected {
+		color: #047857;
+	}
+
+	.result-badge.r2-elected {
+		background: color-mix(in srgb, #047857 15%, transparent);
+		color: #047857;
+	}
+
+	.topic-entry.result-r2-elected {
+		border-left-color: #047857;
 	}
 
 	/* Actions */

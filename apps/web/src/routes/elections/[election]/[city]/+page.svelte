@@ -80,7 +80,20 @@
 	// Split candidates into qualified vs eliminated when results exist
 	let qualifiedCandidates = $derived(() => {
 		if (!hasResults) return [];
-		return randomizedHeadCandidates.filter(c => getResult(c)?.qualified);
+		const qualified = randomizedHeadCandidates.filter(c => getResult(c)?.qualified);
+		if (!round2) return qualified;
+		// Sort: R2 participants first (by R2 voteShare desc), then withdrawn
+		return qualified.sort((a, b) => {
+			const aWithdrawn = isWithdrawnR2(a);
+			const bWithdrawn = isWithdrawnR2(b);
+			if (aWithdrawn !== bWithdrawn) return aWithdrawn ? 1 : -1;
+			if (!aWithdrawn && !bWithdrawn) {
+				const aR2 = getR2Result(a);
+				const bR2 = getR2Result(b);
+				return (bR2?.voteShare || 0) - (aR2?.voteShare || 0);
+			}
+			return 0;
+		});
 	});
 
 	let eliminatedCandidates = $derived(() => {
@@ -117,8 +130,48 @@
 		return round1Info.turnout - turnout2020Value;
 	});
 
-	// Is this a round 1 winner (elected outright)?
-	let isElectedRound1 = $derived(resultsStatus === 'final');
+	// Round 2 results data
+	let round2 = $derived(electionResults?.round2);
+	let round2Info = $derived(round2?.info);
+	let round2Lists = $derived(round2?.lists || []);
+	let electionWinner = $derived(electionResults?.winner);
+	let isElectedRound2 = $derived(resultsStatus === 'final' && !!round2);
+	let isElectedRound1 = $derived(resultsStatus === 'final' && !round2);
+
+
+	// Detect candidates who were R1 qualified but withdrew from R2
+	let r2HeadNames = $derived(() => {
+		if (!round2Lists.length) return new Set<string>();
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-''`]/g, ' ').replace(/\s+/g, ' ').trim();
+		return new Set(round2Lists.map((l: any) => norm(l.headCandidate)));
+	});
+
+	function isWithdrawnR2(candidate: any): boolean {
+		if (!round2 || !getResult(candidate)?.qualified) return false;
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-''`]/g, ' ').replace(/\s+/g, ' ').trim();
+		const names = r2HeadNames();
+		const full = norm(`${candidate.firstName} ${candidate.lastName}`);
+		const reversed = norm(`${candidate.lastName} ${candidate.firstName}`);
+		const last = norm(candidate.lastName);
+		return !names.has(full) && !names.has(reversed) && !names.has(last);
+	}
+
+	function getR2Result(candidate: any) {
+		if (!round2Lists.length) return null;
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-''`]/g, ' ').replace(/\s+/g, ' ').trim();
+		const full = norm(`${candidate.firstName} ${candidate.lastName}`);
+		for (const rl of round2Lists) {
+			const n = norm(rl.headCandidate);
+			if (n === full) return rl;
+		}
+		const last = norm(candidate.lastName);
+		for (const rl of round2Lists) {
+			const n = norm(rl.headCandidate);
+			const parts = n.split(' ');
+			if (parts[parts.length - 1] === last) return rl;
+		}
+		return null;
+	}
 
 	// Section expansion states — Dynamique open by default on desktop (≥768px)
 	let showCityDetails = $state(false);
@@ -228,6 +281,63 @@
 		}
 		return dots;
 	}
+
+	// 2026 hemicycle: reuse the working buildHemicycle function
+	const HEMI_COLORS_2026 = ['#047857', '#e07a5f', '#6b8cae', '#8b6bb3', '#c9a962', '#3d8b8b', '#c97a62', '#7a8c6b'];
+
+	let hemiData2026 = $derived(() => {
+		const lists = round2 ? round2Lists : round1Lists;
+		if (!lists?.length) return { dots: [] as HemiDot[], lists: [] as any[], total: 0 };
+		const seatedLists = lists.filter((l: any) => (l.seats || 0) > 0).sort((a: any, b: any) => (b.seats || 0) - (a.seats || 0));
+		const total = seatedLists.reduce((s: number, l: any) => s + (l.seats || 0), 0);
+		if (!total) return { dots: [] as HemiDot[], lists: [] as any[], total: 0 };
+		const dots = buildHemicycle(seatedLists.map((l: any) => ({ seats: l.seats || 0 })), total);
+		return { dots, lists: seatedLists, total };
+	});
+
+	// 2020 hemicycle data for toggle comparison
+	let hemiData2020 = $derived(() => {
+		const prev = prevElection?.results;
+		if (!prev?.lists?.length) return { dots: [] as HemiDot[], lists: [] as any[], total: 0 };
+		const seatedLists = prev.lists.filter((l: any) => (l.seats || 0) > 0).sort((a: any, b: any) => (b.seats || 0) - (a.seats || 0));
+		const total = seatedLists.reduce((s: number, l: any) => s + (l.seats || 0), 0);
+		if (!total) return { dots: [] as HemiDot[], lists: [] as any[], total: 0 };
+		const dots = buildHemicycle(seatedLists.map((l: any) => ({ seats: l.seats || 0 })), total);
+		return { dots, lists: seatedLists, total };
+	});
+
+	// Hemicycle year toggle state
+	let hemiYear = $state<'2026' | '2020'>('2026');
+
+	// Merged bar graph data: R1 + R2 combined for unified results display
+	let mergedBarData = $derived(() => {
+		if (!round1Lists.length || !round1Info) return [];
+		const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[-\u2019\u2018`]/g, ' ').replace(/\s+/g, ' ').trim();
+
+		const r2Map = new Map<string, typeof round2Lists[0]>();
+		for (const rl of round2Lists) {
+			r2Map.set(norm(rl.headCandidate), rl);
+			const parts = norm(rl.headCandidate).split(' ');
+			if (parts.length > 1) r2Map.set(parts[parts.length - 1], rl);
+		}
+
+		return round1Lists.map(r1 => {
+			const n = norm(r1.headCandidate);
+			const parts = n.split(' ');
+			const r2 = r2Map.get(n) || (parts.length > 1 ? r2Map.get(parts[parts.length - 1]) : null) || null;
+			const withdrawn = r1.qualified && !!round2 && !r2;
+			const isWinner = !!(r2 && electionWinner?.candidate && norm(electionWinner.candidate) === n);
+			return { r1, r2, withdrawn, isWinner };
+		}).sort((a, b) => {
+			if (a.isWinner) return -1;
+			if (b.isWinner) return 1;
+			if (a.r2 && !b.r2) return -1;
+			if (!a.r2 && b.r2) return 1;
+			if (a.r1.qualified && !b.r1.qualified) return -1;
+			if (!a.r1.qualified && b.r1.qualified) return 1;
+			return (b.r2?.voteShare || b.r1.voteShare) - (a.r2?.voteShare || a.r1.voteShare);
+		});
+	});
 
 	// Get head candidates only
 	let headCandidates = $derived(() => {
@@ -994,7 +1104,13 @@
 				</div>
 
 				<div class="hero-right">
-				{#if data.cityData.city.incumbent}
+				{#if electionWinner}
+					<div class="incumbent-pill incumbent-pill-elected">
+						<span class="incumbent-label">Maire élu(e) 2026</span>
+						<span class="incumbent-name">{electionWinner.candidate}</span>
+						<span class="incumbent-party">({electionWinner.party})</span>
+					</div>
+				{:else if data.cityData.city.incumbent}
 					{#if data.cityData.incumbentAnalysis?.mandateAssessment}
 						<a href="#bilan-section" class="incumbent-pill incumbent-pill-link" onclick={(e) => { e.preventDefault(); navToSection('bilan-section'); }}>
 							<span class="incumbent-label">Maire sortant</span>
@@ -1034,23 +1150,51 @@
 		{#if hasResults && round1Info}
 			<div class="participation-strip results-strip">
 				<div class="participation-strip-inner">
-					<div class="participation-strip-bar">
-						<div class="participation-strip-fill fill-2026" style="width: {round1Info.turnout * 100}%"></div>
-						{#if turnout2020Value}
-							<div class="participation-strip-marker" style="left: {turnout2020Value * 100}%" title="2020 : {(turnout2020Value * 100).toFixed(1)}%"></div>
+					<div class="participation-dual">
+						<span class="participation-dual-title">Participation</span>
+						<div class="participation-round">
+							<span class="participation-round-label">T1</span>
+							<div class="participation-strip-bar">
+								<div class="participation-strip-fill fill-2026" style="width: {round1Info.turnout * 100}%"></div>
+								{#if turnout2020Value}
+									<div class="participation-marker marker-2020" style="left: {turnout2020Value * 100}%" title="2020: {(turnout2020Value * 100).toFixed(1)}%">
+										<span class="marker-label">2020</span>
+									</div>
+								{/if}
+								{#if data.cityData?.city?.previousResults?.['2014']?.turnout}
+									{@const t14 = data.cityData.city.previousResults['2014'].turnout}
+									<div class="participation-marker marker-2014" style="left: {t14 * 100}%" title="2014: {(t14 * 100).toFixed(1)}%">
+										<span class="marker-label">2014</span>
+									</div>
+								{/if}
+							</div>
+							<span class="participation-pct">{(round1Info.turnout * 100).toFixed(1)}% <span class="participation-year">2026</span></span>
+						</div>
+						{#if round2Info}
+						<div class="participation-round">
+							<span class="participation-round-label">T2</span>
+							<div class="participation-strip-bar">
+								<div class="participation-strip-fill fill-r2" style="width: {round2Info.turnout * 100}%"></div>
+								{#if turnout2020Value}
+									<div class="participation-marker marker-2020" style="left: {turnout2020Value * 100}%">
+										<span class="marker-label">2020</span>
+									</div>
+								{/if}
+								{#if data.cityData?.city?.previousResults?.['2014']?.turnout}
+									{@const t14 = data.cityData.city.previousResults['2014'].turnout}
+									<div class="participation-marker marker-2014" style="left: {t14 * 100}%">
+										<span class="marker-label">2014</span>
+									</div>
+								{/if}
+							</div>
+							<span class="participation-pct">{(round2Info.turnout * 100).toFixed(1)}% <span class="participation-year">2026</span></span>
+						</div>
 						{/if}
 					</div>
-					<span class="participation-strip-stat">
-						{(round1Info.turnout * 100).toFixed(1)}%
-						{#if turnout2020Value}
-							<span class="participation-strip-legend">
-								<span class="legend-dot dot-2026"></span>2026
-								<span class="legend-dot dot-2020"></span>2020 ({(turnout2020Value * 100).toFixed(0)}%)
-							</span>
-						{/if}
-					</span>
-					{#if isElectedRound1}
+						{#if isElectedRound1}
 						<span class="participation-strip-cta result-status">Élu(e) au 1er tour</span>
+					{:else if isElectedRound2}
+						<span class="participation-strip-cta result-status">Élu(e) au 2nd tour</span>
 					{:else}
 						<span class="participation-strip-cta result-status">2nd tour le 22 mars</span>
 					{/if}
@@ -1068,6 +1212,8 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Winner is now shown via CandidateCard in qualified section -->
 
 		<!-- City Brief (shown on all screens) -->
 		{#if cityExcerpt() || data.cityData.electoralContext?.keyThemes}
@@ -1127,16 +1273,22 @@
 
 		<!-- Section quick-nav -->
 		<nav class="section-nav" class:has-compare-bar={!comparison.isEmpty}>
+			<a href="#candidates-section" class="section-nav-btn" onclick={(e) => { e.preventDefault(); navToSection('candidates-section'); }}>
+				<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+				Candidats
+			</a>
+			{#if data.cityData.localIssues?.length}
+				<a href="#issues-section" class="section-nav-btn" onclick={(e) => { e.preventDefault(); navToSection('issues-section', 'issues'); }}>
+					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+					Enjeux
+				</a>
+			{/if}
 			{#if hasResults}
 				<a href="#results-graph" class="section-nav-btn section-nav-results" onclick={(e) => { e.preventDefault(); navToSection('results-graph'); }}>
 					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
 					Résultats
 				</a>
 			{/if}
-			<a href="#candidates-section" class="section-nav-btn" onclick={(e) => { e.preventDefault(); navToSection('candidates-section'); }}>
-				<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-				Candidats
-			</a>
 			{#if (!hasNoCandidates && randomizedHeadCandidates.length >= 1 && randomizedHeadCandidates.some(c => c.programHighlights?.length)) || (hasNoCandidates && officialLists.length > 0)}
 				<a href="#programs-section" class="section-nav-btn" onclick={(e) => { e.preventDefault(); navToSection('programs-section'); }}>
 					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
@@ -1199,6 +1351,14 @@
 										{@const nameParts = list.headCandidate.split(' ')}
 										{@const initials = nameParts.length >= 2 ? nameParts[0][0] + nameParts[nameParts.length - 1][0] : nameParts[0]?.substring(0, 2) ?? '?'}
 										{@const was2020 = wasCandidate2020(list.headCandidate)}
+										{@const officialResult = round1Lists.find(rl => {
+											const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+											return norm(rl.headCandidate).includes(norm(nameParts[nameParts.length - 1]));
+										})}
+										{@const r2Result = round2Lists.find(rl => {
+											const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+											return norm(rl.headCandidate).includes(norm(nameParts[nameParts.length - 1]));
+										})}
 										<div class="official-head-card" class:was-2020={was2020}>
 											<div class="official-head-avatar" class:was-2020={was2020}>
 												{initials}
@@ -1211,6 +1371,33 @@
 												{/if}
 												{#if was2020}
 													<span class="badge-2020">Candidat en 2020</span>
+												{/if}
+												{#if officialResult}
+													<div class="official-head-result">
+														<span class="official-head-pct" class:winner={officialResult.voteShare > 0.5 || (resultsStatus === 'final' && officialResult.seats > 0)}>
+															{(officialResult.voteShare * 100).toFixed(1)}%
+														</span>
+														{#if officialResult.seats > 0}
+															<span class="official-head-seats">{officialResult.seats} sièges</span>
+														{/if}
+														{#if resultsStatus === 'final' && (officialResult.voteShare > 0.5 || officialResult.seats > 0)}
+															<span class="official-head-elected">Élu(e)</span>
+														{/if}
+													</div>
+												{/if}
+												{#if r2Result}
+													<div class="official-head-result">
+														<span class="official-head-pct" class:winner={r2Result.seats > 0}>
+															{(r2Result.voteShare * 100).toFixed(1)}% T2
+														</span>
+														{#if r2Result.seats > 0}
+															<span class="official-head-seats">{r2Result.seats} sièges</span>
+															<span class="official-head-elected">Élu(e)</span>
+														{/if}
+													</div>
+												{/if}
+												{#if list.candidates?.length}
+													<span class="official-head-count">{list.candidates.length} candidats sur la liste</span>
 												{/if}
 											</div>
 										</div>
@@ -1277,23 +1464,65 @@
 								<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 								</svg>
-								{isElectedRound1 ? 'Résultats du 1er tour' : 'Qualifiés pour le 2nd tour'}
+								{isElectedRound1 ? 'Résultats du 1er tour' : isElectedRound2 ? 'Candidats du 2nd tour' : 'Qualifiés pour le 2nd tour'}
 							</h2>
 							<span class="count-badge qualified-badge">{qualifiedCandidates().length}</span>
 						</div>
 
 						<!-- Qualified candidates -->
 						<div class="candidates-grid" class:few-candidates={qualifiedCandidates().length <= 2}>
-							{#each qualifiedCandidates() as candidate (candidate.id)}
+							{#each qualifiedCandidates() as candidate, idx (candidate.id)}
 								{@const result = getResult(candidate)}
-								<div class="candidate-with-result">
-									{#if result}
-										<div class="vote-badge qualified">
+								{@const r2Result = getR2Result(candidate)}
+								{@const withdrawn = isWithdrawnR2(candidate)}
+								{@const isWinner = resultsStatus === 'final' && r2Result && idx === 0 && !withdrawn}
+								{@const isR1Winner = isElectedRound1 && result && idx === 0}
+								<div class="candidate-with-result" class:withdrawn={withdrawn} class:winner-highlight={idx === 0 && resultsStatus === 'final'}>
+									{#if withdrawn && result}
+										<div class="withdrawn-badge">Retiré(e) du 2nd tour</div>
+										<div class="vote-badge qualified discrete">
+											<div class="vote-badge-bar">
+												<div class="vote-badge-fill" style="width: {(result.voteShare * 100)}%; opacity: 0.5"></div>
+											</div>
+											<span class="vote-pct vote-pct-discrete">{(result.voteShare * 100).toFixed(1)}%</span>
+											<span class="vote-count vote-pct-discrete">{result.votes.toLocaleString('fr-FR')} voix · T1</span>
+										</div>
+									{:else if withdrawn}
+										<div class="withdrawn-badge">Retiré(e) du 2nd tour</div>
+									{:else if isWinner && r2Result}
+										<div class="vote-badge qualified elected">
+											<span class="vote-elected-label">Élu(e)</span>
+											<div class="vote-badge-bar">
+												<div class="vote-badge-fill qualified" style="width: {(r2Result.voteShare * 100)}%"></div>
+											</div>
+											<span class="vote-pct">{(r2Result.voteShare * 100).toFixed(1)}%</span>
+											<span class="vote-count">{r2Result.votes.toLocaleString('fr-FR')} voix{#if r2Result.seats} · {r2Result.seats} sièges{/if}</span>
+										</div>
+									{:else if isR1Winner && result}
+										<div class="vote-badge qualified elected">
+											<span class="vote-elected-label">Élu(e)</span>
 											<div class="vote-badge-bar">
 												<div class="vote-badge-fill qualified" style="width: {(result.voteShare * 100)}%"></div>
 											</div>
 											<span class="vote-pct">{(result.voteShare * 100).toFixed(1)}%</span>
 											<span class="vote-count">{result.votes.toLocaleString('fr-FR')} voix{#if result.seats} · {result.seats} sièges{/if}</span>
+										</div>
+									{:else if round2 && !withdrawn && r2Result}
+										<div class="vote-badge qualified">
+											<div class="vote-badge-bar">
+												<div class="vote-badge-fill qualified" style="width: {(r2Result.voteShare * 100)}%"></div>
+											</div>
+											<span class="vote-pct">{(r2Result.voteShare * 100).toFixed(1)}%</span>
+											<span class="vote-count">{r2Result.votes.toLocaleString('fr-FR')} voix{#if r2Result.seats} · {r2Result.seats} sièges{/if}</span>
+											<span class="vote-r1-hint">{(result.voteShare * 100).toFixed(1)}% au T1</span>
+										</div>
+									{:else if result}
+										<div class="vote-badge qualified">
+											<div class="vote-badge-bar">
+												<div class="vote-badge-fill qualified" style="width: {(result.voteShare * 100)}%"></div>
+											</div>
+											<span class="vote-pct">{(result.voteShare * 100).toFixed(1)}%</span>
+											<span class="vote-count">{result.votes.toLocaleString('fr-FR')} voix{#if !round2} · 2nd tour{/if}</span>
 										</div>
 									{/if}
 									{#if stubIds.has(candidate.id)}
@@ -1319,31 +1548,6 @@
 								</div>
 							{/each}
 						</div>
-
-						{#if !isElectedRound1 && qualifiedCandidates().length >= 2}
-							<div class="compare-qualified-wrap">
-								<button
-									class="compare-all-btn compare-qualified-btn"
-									disabled={qualifiedCompared}
-									onclick={() => {
-										comparison.addAll(qualifiedCandidates(), data.cityData.city.slug, data.cityData.city.name);
-										qualifiedCompared = true;
-									}}
-								>
-									{#if qualifiedCompared}
-										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-										</svg>
-										{qualifiedCandidates().length} qualifiés ajoutés
-									{:else}
-										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-										</svg>
-										Comparer les qualifiés ({qualifiedCandidates().length})
-									{/if}
-								</button>
-							</div>
-						{/if}
 
 						<!-- Eliminated candidates -->
 						{#if eliminatedCandidates().length > 0}
@@ -1423,98 +1627,138 @@
 							</div>
 						{/if}
 
-						<!-- Bar graph: all lists with inscrits-based visual scale -->
-						{#if barGraphData().length > 0 && round1Info}
-							{@const inscrits = round1Info.registeredVoters}
-							{@const abstCount = round1Info.abstentionCount || 0}
-							{@const blancsNuls = (round1Info.blankVotes || 0) + (round1Info.nullVotes || 0)}
-							{@const abstPct = inscrits > 0 ? (abstCount / inscrits) * 100 : 0}
-							{@const blancsNulsPct = inscrits > 0 ? (blancsNuls / inscrits) * 100 : 0}
-							<section id="results-graph" class="results-bar-graph">
-								<h3 class="bar-graph-title">
-									{isElectedRound1 ? 'Résultats du 1er tour' : 'Résultats du 1er tour'}
-									<span class="bar-graph-subtitle">{formatNumber(inscrits)} inscrits</span>
-								</h3>
-								<div class="bar-graph-container">
-									{#each barGraphData() as list}
-										{@const pct = (list.voteShare * 100)}
-										{@const visualPct = inscrits > 0 ? (list.votes / inscrits) * 100 : 0}
-										{@const matchedCandidate = randomizedHeadCandidates.find(c => {
-											const r = getResult(c);
-											return r && r.headCandidate === list.headCandidate;
-										})}
-										{@const isInComparison = matchedCandidate ? comparison.isSelected(matchedCandidate.id) : false}
-										<button
-											class="bar-row"
-											class:qualified={list.isQualified}
-											class:eliminated={!list.isQualified}
-											class:selected={isInComparison}
-											onclick={() => {
-												if (matchedCandidate) {
-													comparison.toggle(matchedCandidate, data.cityData.city.slug, data.cityData.city.name);
-												}
-											}}
-											disabled={!matchedCandidate}
-										>
-											<div class="bar-label">
-												<span class="bar-candidate">{list.headCandidate}</span>
-												<span class="bar-votes">{formatNumber(list.votes)} voix</span>
-											</div>
-											<div class="bar-track">
-												<div
-													class="bar-fill"
-													class:qualified={list.isQualified}
-													style="width: {visualPct}%"
-												></div>
-											</div>
-											<span class="bar-value">{pct.toFixed(1)}%</span>
-											<span class="bar-badge" class:qualified={list.isQualified}>
-												{#if list.isQualified}{isElectedRound1 ? 'Élu' : '2nd'}{/if}
-											</span>
-										</button>
-									{/each}
-
-									<!-- Blancs + Nuls -->
-									<div class="bar-row bar-row-meta">
-										<div class="bar-label">
-											<span class="bar-candidate meta-label">Blancs + Nuls</span>
-											<span class="bar-votes">{formatNumber(blancsNuls)}</span>
-										</div>
-										<div class="bar-track">
-											<div class="bar-fill meta" style="width: {blancsNulsPct}%"></div>
-										</div>
-										<span class="bar-value meta-value">{blancsNulsPct.toFixed(1)}%</span>
-									</div>
-
-									<!-- Abstention -->
-									<div class="bar-row bar-row-meta">
-										<div class="bar-label">
-											<span class="bar-candidate meta-label">Abstention</span>
-											<span class="bar-votes">{formatNumber(abstCount)}</span>
-										</div>
-										<div class="bar-track">
-											<div class="bar-fill abstention" style="width: {abstPct}%"></div>
-										</div>
-										<span class="bar-value meta-value">{abstPct.toFixed(1)}%</span>
-									</div>
-								</div>
-
-								<div class="bar-graph-legend">
-									<span>Participation : {(round1Info.turnout * 100).toFixed(1)}%</span>
-									{#if turnout2020Value}
-										{@const delta = turnoutDelta()}
-										{#if delta !== null}
-											<span class="turnout-delta" class:positive={delta > 0} class:negative={delta < 0}>
-												({delta > 0 ? '+' : ''}{(delta * 100).toFixed(1)} pts vs 2020)
-											</span>
-										{/if}
+						{#if !isElectedRound1 && !isElectedRound2 && qualifiedCandidates().length >= 2}
+							<div class="compare-qualified-wrap">
+								<button
+									class="compare-all-btn compare-qualified-btn"
+									disabled={qualifiedCompared}
+									onclick={() => {
+										comparison.addAll(qualifiedCandidates(), data.cityData.city.slug, data.cityData.city.name);
+										qualifiedCompared = true;
+									}}
+								>
+									{#if qualifiedCompared}
+										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+										</svg>
+										{qualifiedCandidates().length} qualifiés ajoutés
+									{:else}
+										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+										</svg>
+										Comparer les qualifiés ({qualifiedCandidates().length})
 									{/if}
-									{#if !isElectedRound1}
-										<span class="qualification-note">Seuil de qualification : 10% des inscrits</span>
-									{/if}
-								</div>
-							</section>
+								</button>
+							</div>
 						{/if}
+
+			<!-- Enjeux, dynamique, attentes — full-width below main columns -->
+			<div class="grid-context">
+				<!-- Issues Summary -->
+				{#if data.cityData.localIssues && data.cityData.localIssues.length > 0}
+					<section id="issues-section" class="context-card">
+						<button class="sidebar-header" onclick={() => toggleSection('issues')}>
+							<h3 class="sidebar-title">
+								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+								</svg>
+								Enjeux locaux
+							</h3>
+							<div class="sidebar-meta">
+								<span class="count-badge small">{data.cityData.localIssues.length}</span>
+								<span class="expand-icon" class:expanded={expandedSections.has('issues')}>
+									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+									</svg>
+								</span>
+							</div>
+						</button>
+
+						{#if expandedSections.has('issues')}
+							<div class="sidebar-body">
+								{#each data.cityData.localIssues as issue, i (issue.rank)}
+									<div class="issue-compact">
+										<span class="issue-rank">{issue.rank}</span>
+										<div class="issue-info">
+											<strong>{issue.issue}{@render cite(`localIssues[${i}].issue`)}</strong>
+											{#if issue.description}
+												<p>{issue.description}{@render cite(`localIssues[${i}].description`)}</p>
+											{/if}
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</section>
+				{/if}
+
+				<!-- Campaign Dynamics -->
+				{#if data.cityData.electoralContext?.campaignDynamics || data.cityData.politicalLandscape?.localPoliticalDynamics}
+					<section class="context-card">
+						<button class="sidebar-header" onclick={() => toggleSection('dynamics')}>
+							<h3 class="sidebar-title">
+								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+								</svg>
+								Dynamique
+							</h3>
+							<span class="expand-icon" class:expanded={expandedSections.has('dynamics')}>
+								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+								</svg>
+							</span>
+						</button>
+
+						{#if expandedSections.has('dynamics')}
+							<div class="sidebar-body dynamics-content">
+								{#if data.cityData.electoralContext?.campaignDynamics}
+									<p>{data.cityData.electoralContext.campaignDynamics}{@render cite('electoralContext.campaignDynamics')}</p>
+								{/if}
+								{#if data.cityData.politicalLandscape?.localPoliticalDynamics}
+									<p>{data.cityData.politicalLandscape.localPoliticalDynamics}{@render cite('politicalLandscape.localPoliticalDynamics')}</p>
+								{/if}
+
+								{#if data.cityData.electoralContext?.potentialAlliances}
+									<div class="alliances-mini">
+										<strong>Alliances possibles :</strong>
+										<ul>
+											{#each data.cityData.electoralContext.potentialAlliances as alliance, i}
+												<li>{alliance}{@render cite(`electoralContext.potentialAlliances[${i}]`)}</li>
+											{/each}
+										</ul>
+									</div>
+								{/if}
+
+								{#if data.cityData.incumbentAnalysis?.reelectionLikelihood}
+									<div class="reelection-mini">
+										<span class="status-badge">
+											{data.cityData.incumbentAnalysis.reelectionLikelihood.runningAgain ? '🏃 Maire se représente' : '🚪 Maire ne se représente pas'}
+										</span>
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</section>
+				{/if}
+
+				<!-- Voter Expectations (compact) -->
+				{#if data.cityData.electoralContext?.voterExpectations}
+					<section class="context-card compact">
+						<h3 class="sidebar-title-static">
+							<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+							</svg>
+							Attentes des électeurs
+						</h3>
+						<ul class="expectations-list">
+							{#each data.cityData.electoralContext.voterExpectations as expectation, i}
+								<li>{expectation}{@render cite(`electoralContext.voterExpectations[${i}]`)}</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+
+			</div>
 
 						{:else}
 						<!-- ═══ NO RESULTS: original candidate grid ═══ -->
@@ -1587,6 +1831,209 @@
 							Cliquez sur une carte pour voir les détails
 						</p>
 						{/if}
+
+						<!-- Results sections: shown for ANY city with results, regardless of candidates -->
+						{#if mergedBarData().length > 0 && round1Info}
+							{@const inscrits = round1Info.registeredVoters}
+							{@const r1AbstCount = round1Info.abstentionCount || 0}
+							{@const r1BlancsNuls = (round1Info.blankVotes || 0) + (round1Info.nullVotes || 0)}
+							{@const r1AbstPct = inscrits > 0 ? (r1AbstCount / inscrits) * 100 : 0}
+							{@const r1BlancsNulsPct = inscrits > 0 ? (r1BlancsNuls / inscrits) * 100 : 0}
+							{@const r2Inscrits = round2Info?.registeredVoters || inscrits}
+							{@const r2AbstCount = round2Info ? (round2Info.abstentionCount || (r2Inscrits - (round2Info.voters || 0))) : 0}
+							{@const r2BlancsNuls = round2Info ? ((round2Info.blankVotes || 0) + (round2Info.nullVotes || 0)) : 0}
+							{@const r2AbstPct = r2Inscrits > 0 && round2Info ? (r2AbstCount / r2Inscrits) * 100 : 0}
+							{@const r2BlancsNulsPct = r2Inscrits > 0 && round2Info ? (r2BlancsNuls / r2Inscrits) * 100 : 0}
+							<section id="results-graph" class="results-bar-graph">
+								<h3 class="bar-graph-title">
+									Résultats
+									<span class="bar-graph-subtitle">{formatNumber(inscrits)} inscrits</span>
+								</h3>
+								<div class="bar-graph-container">
+									{#each mergedBarData() as entry}
+										{@const r1Pct = (entry.r1.voteShare * 100)}
+										{@const r1VisualPct = inscrits > 0 ? (entry.r1.votes / inscrits) * 100 : 0}
+										{@const r2Pct = entry.r2 ? (entry.r2.voteShare * 100) : 0}
+										{@const r2VisualPct = entry.r2 && r2Inscrits > 0 ? (entry.r2.votes / r2Inscrits) * 100 : 0}
+										{@const matchedCandidate = randomizedHeadCandidates.find(c => {
+											const r = getResult(c);
+											return r && r.headCandidate === entry.r1.headCandidate;
+										})}
+										{@const isInComparison = matchedCandidate ? comparison.isSelected(matchedCandidate.id) : false}
+										<div
+											class="bar-row"
+											class:qualified={entry.r1.qualified}
+											class:eliminated={!entry.r1.qualified}
+											class:withdrawn={entry.withdrawn}
+											class:winner={entry.isWinner}
+										>
+											<div class="bar-label">
+												<span class="bar-candidate">{entry.r1.headCandidate}</span>
+												<span class="bar-votes">{formatNumber(entry.r1.votes)} voix{#if entry.r2} / {formatNumber(entry.r2.votes)}{/if}</span>
+											</div>
+											<div class="bar-tracks">
+												{#if entry.r2}
+													<div class="bar-track">
+														<span class="bar-round-label">T2</span>
+														<div class="bar-fill r2" style="width: {r2VisualPct}%"></div>
+													</div>
+												{/if}
+												<div class="bar-track">
+													<span class="bar-round-label">T1</span>
+													<div class="bar-fill r1" class:qualified={entry.r1.qualified} style="width: {r1VisualPct}%"></div>
+												</div>
+											</div>
+											<span class="bar-value">
+												{#if entry.r2}<span class="bar-val-r2">{r2Pct.toFixed(1)}%</span>{/if}
+												<span class="bar-val-r1">{r1Pct.toFixed(1)}%</span>
+											</span>
+											<span class="bar-badge" class:qualified={entry.r1.qualified}>
+												{#if entry.isWinner}Élu{:else if entry.withdrawn}Retiré{:else if entry.r2 && !entry.isWinner}T2{:else if entry.r1.qualified}{isElectedRound1 ? 'Élu' : '2nd'}{:else}&nbsp;{/if}
+											</span>
+										</div>
+									{/each}
+
+									<!-- Blancs + Nuls -->
+									<div class="bar-row bar-row-meta">
+										<div class="bar-label">
+											<span class="bar-candidate meta-label">Blancs + Nuls</span>
+											<span class="bar-votes">{formatNumber(r1BlancsNuls)}{#if round2Info} / {formatNumber(r2BlancsNuls)}{/if}</span>
+										</div>
+										<div class="bar-tracks">
+											{#if round2Info}
+												<div class="bar-track">
+													<span class="bar-round-label">T2</span>
+													<div class="bar-fill meta" style="width: {r2BlancsNulsPct}%"></div>
+												</div>
+											{/if}
+											<div class="bar-track">
+												<span class="bar-round-label">T1</span>
+												<div class="bar-fill meta" style="width: {r1BlancsNulsPct}%"></div>
+											</div>
+										</div>
+										<span class="bar-value meta-value">
+											{#if round2Info}<span class="bar-val-r2">{r2BlancsNulsPct.toFixed(1)}%</span>{/if}
+											<span class="bar-val-r1">{r1BlancsNulsPct.toFixed(1)}%</span>
+										</span>
+									</div>
+
+									<!-- Abstention -->
+									<div class="bar-row bar-row-meta">
+										<div class="bar-label">
+											<span class="bar-candidate meta-label">Abstention</span>
+											<span class="bar-votes">{formatNumber(r1AbstCount)}{#if round2Info} / {formatNumber(r2AbstCount)}{/if}</span>
+										</div>
+										<div class="bar-tracks">
+											{#if round2Info}
+												<div class="bar-track">
+													<span class="bar-round-label">T2</span>
+													<div class="bar-fill abstention" style="width: {r2AbstPct}%"></div>
+												</div>
+											{/if}
+											<div class="bar-track">
+												<span class="bar-round-label">T1</span>
+												<div class="bar-fill abstention" style="width: {r1AbstPct}%"></div>
+											</div>
+										</div>
+										<span class="bar-value meta-value">
+											{#if round2Info}<span class="bar-val-r2">{r2AbstPct.toFixed(1)}%</span>{/if}
+											<span class="bar-val-r1">{r1AbstPct.toFixed(1)}%</span>
+										</span>
+									</div>
+								</div>
+
+								{#if round2}
+									<div class="bar-legend-rounds">
+										<span class="legend-r2"><span class="legend-swatch" style="background: #047857"></span> 2nd tour</span>
+										<span class="legend-r1"><span class="legend-swatch" style="background: #b8860b"></span> 1er tour</span>
+									</div>
+								{/if}
+
+								<div class="bar-graph-legend">
+									<span>Participation T1 : {(round1Info.turnout * 100).toFixed(1)}%</span>
+									{#if round2Info}
+										<span>T2 : {(round2Info.turnout * 100).toFixed(1)}%</span>
+									{/if}
+									{#if turnout2020Value}
+										{@const delta = turnoutDelta()}
+										{#if delta !== null}
+											<span class="turnout-delta" class:positive={delta > 0} class:negative={delta < 0}>
+												({delta > 0 ? '+' : ''}{(delta * 100).toFixed(1)} pts vs 2020)
+											</span>
+										{/if}
+									{/if}
+									{#if !isElectedRound1 && !isElectedRound2 && !round2}
+										<span class="qualification-note">Seuil de qualification : 10% des inscrits</span>
+									{/if}
+								</div>
+							</section>
+						{/if}
+
+						<!-- 2026 Hemicycle with 2020 toggle -->
+						{#if resultsStatus === 'final'}
+							{@const hemi = hemiData2026()}
+							{@const hemi20 = hemiData2020()}
+							{#if hemi.total > 0}
+							<section class="hemicycle-section" id="hemicycle-2026">
+								<h3 class="bar-graph-title">
+									Conseil municipal
+									{#if hemi20.total > 0}
+										<div class="hemi-toggle">
+											<button class="hemi-toggle-btn" class:active={hemiYear === '2026'} onclick={() => hemiYear = '2026'}>2026</button>
+											<button class="hemi-toggle-btn" class:active={hemiYear === '2020'} onclick={() => hemiYear = '2020'}>2020</button>
+										</div>
+									{/if}
+								</h3>
+								{#if hemiYear === '2026'}
+									<div class="hemicycle-container">
+										<svg viewBox="0 0 300 158">
+											{#each hemi.dots as dot}
+												<circle
+													cx={dot.x.toFixed(1)}
+													cy={dot.y.toFixed(1)}
+													r={hemi.total <= 30 ? 4.5 : hemi.total <= 60 ? 3.5 : hemi.total <= 120 ? 2.8 : 2}
+													fill={dot.listIdx >= 0 ? HEMI_COLORS_2026[dot.listIdx % HEMI_COLORS_2026.length] : '#d0d0d0'}
+												>
+													<title>{dot.listIdx >= 0 ? hemi.lists[dot.listIdx]?.headCandidate : ''}</title>
+												</circle>
+											{/each}
+										</svg>
+									</div>
+									<div class="hemicycle-legend">
+										{#each hemi.lists as list, i}
+											<span class="hemicycle-legend-item">
+												<span class="hemicycle-legend-dot" style="background: {HEMI_COLORS_2026[i % HEMI_COLORS_2026.length]}"></span>
+												{list.headCandidate}: {list.seats} sièges
+											</span>
+										{/each}
+									</div>
+								{:else}
+									<div class="hemicycle-container">
+										<svg viewBox="0 0 300 158">
+											{#each hemi20.dots as dot}
+												<circle
+													cx={dot.x.toFixed(1)}
+													cy={dot.y.toFixed(1)}
+													r={hemi20.total <= 30 ? 4.5 : hemi20.total <= 60 ? 3.5 : hemi20.total <= 120 ? 2.8 : 2}
+													fill={dot.listIdx >= 0 ? HEMI_COLORS[dot.listIdx % HEMI_COLORS.length] : '#d0d0d0'}
+												>
+													<title>{dot.listIdx >= 0 ? hemi20.lists[dot.listIdx]?.headCandidate : ''}</title>
+												</circle>
+											{/each}
+										</svg>
+									</div>
+									<div class="hemicycle-legend">
+										{#each hemi20.lists as list, i}
+											<span class="hemicycle-legend-item">
+												<span class="hemicycle-legend-dot" style="background: {HEMI_COLORS[i % HEMI_COLORS.length]}"></span>
+												{list.headCandidate}: {list.seats} sièges
+											</span>
+										{/each}
+									</div>
+								{/if}
+							</section>
+							{/if}
+						{/if}
 					</section>
 
 					{#if dataTier === 'research'}
@@ -1607,7 +2054,11 @@
 									</svg>
 									Bilan du maire sortant
 									{#if data.cityData.city.incumbent}
-										<span class="bilan-mayor-name">— {data.cityData.city.incumbent.name}</span>
+										<span class="bilan-mayor-name">— {data.cityData.city.incumbent.name}
+											{#if data.cityData.city.incumbent.since}
+												(élu en {data.cityData.city.incumbent.since})
+											{/if}
+										</span>
 									{/if}
 								</h2>
 								<div class="bilan-grid">
@@ -1938,113 +2389,6 @@
 
 					</aside>
 
-			<!-- Enjeux, dynamique, attentes — full-width below main columns -->
-			<div class="grid-context">
-				<!-- Issues Summary -->
-				{#if data.cityData.localIssues && data.cityData.localIssues.length > 0}
-					<section class="context-card">
-						<button class="sidebar-header" onclick={() => toggleSection('issues')}>
-							<h3 class="sidebar-title">
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-								</svg>
-								Enjeux locaux
-							</h3>
-							<div class="sidebar-meta">
-								<span class="count-badge small">{data.cityData.localIssues.length}</span>
-								<span class="expand-icon" class:expanded={expandedSections.has('issues')}>
-									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-									</svg>
-								</span>
-							</div>
-						</button>
-
-						{#if expandedSections.has('issues')}
-							<div class="sidebar-body">
-								{#each data.cityData.localIssues as issue, i (issue.rank)}
-									<div class="issue-compact">
-										<span class="issue-rank">{issue.rank}</span>
-										<div class="issue-info">
-											<strong>{issue.issue}{@render cite(`localIssues[${i}].issue`)}</strong>
-											{#if issue.description}
-												<p>{issue.description}{@render cite(`localIssues[${i}].description`)}</p>
-											{/if}
-										</div>
-									</div>
-								{/each}
-							</div>
-						{/if}
-					</section>
-				{/if}
-
-				<!-- Campaign Dynamics -->
-				{#if data.cityData.electoralContext?.campaignDynamics || data.cityData.politicalLandscape?.localPoliticalDynamics}
-					<section class="context-card">
-						<button class="sidebar-header" onclick={() => toggleSection('dynamics')}>
-							<h3 class="sidebar-title">
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-								</svg>
-								Dynamique
-							</h3>
-							<span class="expand-icon" class:expanded={expandedSections.has('dynamics')}>
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-								</svg>
-							</span>
-						</button>
-
-						{#if expandedSections.has('dynamics')}
-							<div class="sidebar-body dynamics-content">
-								{#if data.cityData.electoralContext?.campaignDynamics}
-									<p>{data.cityData.electoralContext.campaignDynamics}{@render cite('electoralContext.campaignDynamics')}</p>
-								{/if}
-								{#if data.cityData.politicalLandscape?.localPoliticalDynamics}
-									<p>{data.cityData.politicalLandscape.localPoliticalDynamics}{@render cite('politicalLandscape.localPoliticalDynamics')}</p>
-								{/if}
-
-								{#if data.cityData.electoralContext?.potentialAlliances}
-									<div class="alliances-mini">
-										<strong>Alliances possibles :</strong>
-										<ul>
-											{#each data.cityData.electoralContext.potentialAlliances as alliance, i}
-												<li>{alliance}{@render cite(`electoralContext.potentialAlliances[${i}]`)}</li>
-											{/each}
-										</ul>
-									</div>
-								{/if}
-
-								{#if data.cityData.incumbentAnalysis?.reelectionLikelihood}
-									<div class="reelection-mini">
-										<span class="status-badge">
-											{data.cityData.incumbentAnalysis.reelectionLikelihood.runningAgain ? '🏃 Maire se représente' : '🚪 Maire ne se représente pas'}
-										</span>
-									</div>
-								{/if}
-							</div>
-						{/if}
-					</section>
-				{/if}
-
-				<!-- Voter Expectations (compact) -->
-				{#if data.cityData.electoralContext?.voterExpectations}
-					<section class="context-card compact">
-						<h3 class="sidebar-title-static">
-							<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-							</svg>
-							Attentes des électeurs
-						</h3>
-						<ul class="expectations-list">
-							{#each data.cityData.electoralContext.voterExpectations as expectation, i}
-								<li>{expectation}{@render cite(`electoralContext.voterExpectations[${i}]`)}</li>
-							{/each}
-						</ul>
-					</section>
-				{/if}
-
-			</div>
 
 			</div>
 		</main>
@@ -2124,7 +2468,7 @@
 						<div class="program-compare-card" class:selected={comparison.isSelected(candidate.id)} class:is-qualified={candidateResult?.qualified}>
 							{#if candidateResult}
 								<div class="program-card-result-badge" class:qualified={candidateResult.qualified}>
-									{(candidateResult.voteShare * 100).toFixed(1)}% — {candidateResult.qualified ? (isElectedRound1 ? 'Élu(e)' : '2nd tour') : 'Non qualifié(e)'}
+									{(candidateResult.voteShare * 100).toFixed(1)}% — {candidateResult.qualified ? (isElectedRound1 ? 'Élu(e)' : isElectedRound2 ? 'Élu(e) R2' : '2nd tour') : 'Non qualifié(e)'}
 								</div>
 							{/if}
 							<div class="program-card-header">
@@ -3518,16 +3862,52 @@
 		background: linear-gradient(90deg, #4ade80, #22c55e);
 	}
 
-	.participation-strip-marker {
+	.participation-marker {
 		position: absolute;
-		top: -3px;
-		width: 3px;
-		height: 14px;
-		background: var(--color-gold);
-		border-radius: 2px;
-		opacity: 0.9;
-		transform: translateX(-1px);
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		z-index: 2;
 	}
+	.participation-marker.marker-2020 {
+		background: #c9a962;
+	}
+	.participation-marker.marker-2014 {
+		background: #6b8cae;
+		border-left: 1px dashed #6b8cae;
+		width: 0;
+	}
+	.marker-label {
+		position: absolute;
+		top: -12px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: 0.5rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+		white-space: nowrap;
+	}
+	.participation-legend {
+		display: flex;
+		gap: 0.6rem;
+		font-size: 0.6rem;
+		color: var(--color-text-muted);
+		margin-top: 2px;
+	}
+	.participation-legend .legend-item { display: flex; align-items: center; gap: 3px; }
+	.participation-legend .legend-swatch {
+		display: inline-block;
+		width: 8px;
+		height: 8px;
+		border-radius: 2px;
+	}
+	.legend-marker-line {
+		display: inline-block;
+		width: 8px;
+		height: 2px;
+	}
+	.legend-marker-line.marker-2020 { background: #c9a962; }
+	.legend-marker-line.marker-2014 { background: #6b8cae; border-top: 1px dashed #6b8cae; height: 0; }
 
 	.participation-strip-stat {
 		font-size: 0.78rem;
@@ -3658,6 +4038,21 @@
 		font-size: 0.6rem;
 		font-weight: 500;
 		opacity: 0.85;
+	}
+
+	.vote-badge.discrete {
+		opacity: 0.7;
+	}
+	.vote-pct-discrete {
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+	}
+	.vote-r1-hint {
+		display: block;
+		font-size: 0.65rem;
+		color: var(--color-text-muted);
+		text-align: center;
+		margin-top: -0.2rem;
 	}
 
 	/* Eliminated candidates: reduced opacity */
@@ -6544,6 +6939,38 @@
 		margin-top: 0.2rem;
 	}
 
+	.official-head-result {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		margin-top: 0.2rem;
+	}
+	.official-head-pct {
+		font-weight: 700;
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+	.official-head-pct.winner {
+		color: #047857;
+	}
+	.official-head-seats {
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+	}
+	.official-head-elected {
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: #047857;
+		background: rgba(4, 120, 87, 0.1);
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+		text-transform: uppercase;
+	}
+	.official-head-count {
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+	}
+
 	/* ─── 2020 Cross-reference badges ─── */
 
 	.official-head-card.was-2020 {
@@ -6891,5 +7318,114 @@
 	.incumbent-pill .cite-mark {
 		color: white;
 	}
+
+	/* ═══ 2026 Hemicycle ═══ */
+	.hemicycle-section { margin-top: 1.5rem; }
+	.hemicycle-section .hemicycle-container svg { width: 100%; height: auto; }
+
+	/* ═══ Withdrawn candidates ═══ */
+	.candidate-with-result.withdrawn {
+		opacity: 0.6;
+	}
+	.withdrawn-badge {
+		text-align: center;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		padding: 0.3rem 0.6rem;
+		background: var(--color-surface);
+		border: 1px dashed var(--color-border);
+		border-radius: 8px;
+		margin-bottom: 0.4rem;
+	}
+
+	/* ═══ Elected badge on vote-badge ═══ */
+	.vote-elected-label {
+		font-size: 0.65rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		opacity: 0.9;
+	}
+
+	/* ═══ Elected incumbent pill ═══ */
+	.incumbent-pill-elected {
+		background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+		color: white !important;
+	}
+	.incumbent-pill-elected .incumbent-label {
+		color: rgba(255, 255, 255, 0.85);
+	}
+	.incumbent-pill-elected .incumbent-name {
+		color: white;
+	}
+	.incumbent-pill-elected .incumbent-party {
+		color: rgba(255, 255, 255, 0.85);
+	}
+
+
+	/* ═══ Winner highlight ═══ */
+	.candidate-with-result.winner-highlight {
+		border: 2px solid #047857;
+		border-radius: 14px;
+		padding: 0.3rem;
+		background: linear-gradient(135deg, rgba(4,120,87,0.06) 0%, rgba(6,95,70,0.02) 100%);
+	}
+
+	/* ═══ Merged bar graph: dual-track layout ═══ */
+	.bar-tracks { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+	.bar-fill.r1 { background: #b8860b; }
+	.bar-fill.r2 { background: #047857; }
+	.bar-row.withdrawn { opacity: 0.5; }
+	.bar-row.withdrawn .bar-candidate { text-decoration: line-through; }
+	.bar-row.winner { border-color: #047857; background: color-mix(in srgb, #047857 8%, transparent); }
+
+	.bar-legend-rounds {
+		display: flex;
+		gap: 1rem;
+		margin-top: 0.5rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid var(--color-card-border);
+		font-size: 0.7rem;
+		font-weight: 600;
+	}
+	.legend-r1 { color: #b8860b; }
+	.legend-r2 { color: #047857; }
+	.legend-swatch {
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		border-radius: 2px;
+		vertical-align: middle;
+		margin-right: 3px;
+	}
+	.bar-val-r1 { display: block; font-size: 0.7rem; color: #b8860b; }
+	.bar-val-r2 { display: block; font-size: 0.8rem; font-weight: 600; color: #047857; }
+	.bar-round-label {
+		position: absolute;
+		left: 2px;
+		top: 50%;
+		transform: translateY(-50%);
+		font-size: 0.55rem;
+		font-weight: 700;
+		color: rgba(255,255,255,0.7);
+		z-index: 1;
+		pointer-events: none;
+	}
+	.bar-track { position: relative; }
+
+	/* ═══ Dual participation strip (R1 + R2) ═══ */
+	.participation-dual { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+	.participation-dual-title { font-size: 0.65rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+	.participation-round { display: flex; align-items: center; gap: 0.4rem; }
+	.participation-round-label { font-size: 0.65rem; font-weight: 700; color: var(--color-text-muted); width: 1.4rem; text-align: right; }
+	.participation-pct { font-size: 0.8rem; font-weight: 600; min-width: 3.2rem; color: var(--color-gold); }
+	.participation-year { font-size: 0.6rem; color: var(--color-text-muted); font-weight: 400; }
+	.fill-r2 { background: #047857; }
+
+	/* ═══ Hemicycle year toggle ═══ */
+	.hemi-toggle { display: inline-flex; gap: 2px; margin-left: 0.5rem; background: var(--color-surface); border-radius: 6px; padding: 2px; }
+	.hemi-toggle-btn { padding: 0.15rem 0.5rem; border: none; background: none; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--color-text-muted); }
+	.hemi-toggle-btn.active { background: var(--color-bg); color: var(--color-text); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
 </style>

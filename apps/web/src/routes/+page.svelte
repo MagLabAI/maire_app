@@ -3,7 +3,6 @@
 	import type { City, Candidate } from '$lib/types/elections';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import CountdownTimer from '$lib/components/CountdownTimer.svelte';
 	import CitySearch from '$lib/components/CitySearch.svelte';
 	import CandidateCard from '$lib/components/CandidateCard.svelte';
 	import CompareBar from '$lib/components/CompareBar.svelte';
@@ -13,7 +12,6 @@
 	let { data }: { data: PageData } = $props();
 
 	let featuredElection = $derived(data.elections.find((e) => e.id === data.featuredElection));
-	let electionDate = $derived(featuredElection?.dates.round2 || '2026-03-22');
 
 	const popularCities = [
 		{ name: 'Paris', slug: 'paris' },
@@ -145,7 +143,7 @@
 
 <svelte:head>
 	<title>maire.app — Élections Municipales 2026 | Candidats, programmes et statistiques</title>
-	<meta name="description" content="Comparez les candidats aux élections municipales 2026 dans votre commune. Programmes, statistiques INSEE, finances municipales, projections climatiques, taux de participation et carte interactive. Plateforme citoyenne indépendante — données ouvertes sur 34 000 communes." />
+	<meta name="description" content="Résultats des élections municipales 2026 — 34 776 maires élu(e)s. Programmes, statistiques INSEE, finances municipales, projections climatiques, taux de participation et carte interactive. Plateforme citoyenne indépendante — données ouvertes sur 34 000 communes." />
 	<SeoMeta
 		title="maire.app — Élections Municipales 2026 | Candidats, programmes et statistiques"
 		description="Comparez les candidats aux élections municipales 2026 dans votre commune. Programmes, statistiques INSEE, finances municipales, projections climatiques, participation et carte interactive."
@@ -164,22 +162,17 @@
 			</div>
 
 			<h1 class="hero-title">
-				Élections municipales 2026 :
-				<span class="text-gradient-gold">comparez les candidats</span>
+				Résultats des élections
+				<span class="text-gradient-gold">municipales 2026</span>
 			</h1>
 
 			<p class="hero-subtitle">
-				Explorez les programmes, comparez les profils et faites un choix éclairé pour votre ville.
+				<strong>34 776 nouveaux maires élu(e)s !</strong> Découvrez les résultats, la composition des conseils municipaux et les programmes des élus dans votre ville.
 			</p>
 
-			<!-- Participation callout — visible early on mobile -->
 			<div class="participation-inline">
-				<span class="participation-inline-stat">53%</span>
-				<span class="participation-inline-text">de participation au 1er tour <span class="participation-delta">+11pts 2020</span></span>
-			</div>
-
-			<div class="hero-countdown">
-				<CountdownTimer targetDate={electionDate} label="2nd tour" />
+				<span class="participation-inline-stat">&#10003;</span>
+				<span class="participation-inline-text">Résultats définitifs des 1er et 2nd tours</span>
 			</div>
 
 			<!-- Geolocation suggestion -->

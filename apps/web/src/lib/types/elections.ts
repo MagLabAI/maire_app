@@ -59,6 +59,11 @@ export interface City {
 	officialWebsite?: string;
 	listsCount: number;
 	candidatesCount: number;
+	newMayor?: {
+		name: string;
+		party: string;
+		voteShare: number;
+	};
 }
 
 /**
